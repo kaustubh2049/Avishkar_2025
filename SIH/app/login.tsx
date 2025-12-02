@@ -53,7 +53,7 @@ export default function LoginScreen() {
     if (user) {
       const userType = user.userType || "analyst";
       if (userType === "farmer") {
-        router.replace("/(farmer)/dashboard");
+        router.replace("/farmer");
       } else {
         // For analysts, redirect to the home tab
         router.replace("/(tabs)/home");

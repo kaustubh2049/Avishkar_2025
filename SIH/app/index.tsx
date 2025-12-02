@@ -11,7 +11,11 @@ export default function IndexScreen() {
   useEffect(() => {
     if (!isLoading) {
       if (user) {
-        router.replace("/(tabs)/home");
+        if (user.userType === "farmer") {
+          router.replace("/farmer");
+        } else {
+          router.replace("/(tabs)/home");
+        }
       } else {
         router.replace("/login");
       }

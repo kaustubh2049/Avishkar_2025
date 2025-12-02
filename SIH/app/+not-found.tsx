@@ -11,7 +11,7 @@ export default function NotFoundScreen() {
     // If user is logged in, redirect to appropriate screen
     if (user) {
       if (user.userType === "farmer") {
-        router.replace("/(farmer)/dashboard");
+        router.replace("/farmer");
       } else {
         // For analysts, redirect to the home tab
         router.replace("/(tabs)/home");
@@ -34,9 +34,9 @@ export default function NotFoundScreen() {
               style={styles.button}
               onPress={() => {
                 if (user.userType === "farmer") {
-                  router.replace("/(farmer)/dashboard");
+                  router.replace("/farmer");
                 } else {
-                  router.replace("/(tabs)");
+                  router.replace("/(tabs)/home");
                 }
               }}
             >

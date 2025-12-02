@@ -60,7 +60,7 @@ export default function SignupScreen() {
       }
       // Redirect to the appropriate dashboard based on user type
       if (userType === "farmer") {
-        router.replace("/(farmer)/dashboard");
+        router.replace("/farmer");
       } else {
         // For analysts, redirect to the home tab
         router.replace("/(tabs)/home");
