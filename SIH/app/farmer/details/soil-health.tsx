@@ -17,20 +17,21 @@ import {
   Droplets,
   AlertCircle,
 } from "lucide-react-native";
+import { FarmerHeader, AiFab } from "@/components/FarmerHeader";
 
 const SoilHealthDetails = () => {
   const router = useRouter();
 
   // Mock soil data
   const soilData = {
-    score: 78,
+    score: 68,
     status: "Good",
     nutrients: [
       {
         name: "Nitrogen (N)",
-        value: 65,
-        status: "Optimal",
-        range: "40-80 ppm",
+        value: 20,
+        status: "Low",
+        range: "10-40 ppm",
       },
       {
         name: "Phosphorus (P)",
@@ -39,8 +40,12 @@ const SoilHealthDetails = () => {
         range: "30-50 ppm",
       },
       { name: "Potassium (K)", value: 85, status: "High", range: "40-80 ppm" },
-      { name: "Zinc (Zn)", value: 25, status: "Low", range: "30-50 ppm" },
-      { name: "Iron (Fe)", value: 50, status: "Optimal", range: "40-60 ppm" },
+      {
+        name: "pH",
+        value: 6.5,
+        status: "Optimal",
+        range: "6.0-7.5",
+      },
     ],
     recommendations: [
       "Apply zinc sulfate at 25 kg/ha during next sowing",
@@ -69,6 +74,8 @@ const SoilHealthDetails = () => {
           <View style={{ width: 24 }} />
         </View>
       </LinearGradient>
+      <FarmerHeader />
+      <AiFab />
 
       <ScrollView style={styles.content}>
         {/* Soil Health Score */}

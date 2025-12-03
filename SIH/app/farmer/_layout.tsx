@@ -1,10 +1,8 @@
 import { Tabs } from "expo-router";
-import { CloudSun, MapPin, MessageSquare, Bell, ScanLine } from "lucide-react-native";
+import { CloudSun, MapPin, ScanLine } from "lucide-react-native";
 import React from "react";
-import { useTheme } from "@/providers/theme-provider";
 
 export default function FarmerLayout() {
-  const { theme } = useTheme();
 
   return (
     <Tabs
@@ -12,6 +10,7 @@ export default function FarmerLayout() {
         tabBarActiveTintColor: "#0ea5e9", // Sky blue
         tabBarInactiveTintColor: "#64748b",
         headerShown: false,
+        tabBarHideOnKeyboard: true,
         tabBarStyle: {
           backgroundColor: "#ffffff",
           borderTopWidth: 0,
@@ -20,10 +19,15 @@ export default function FarmerLayout() {
           shadowOffset: { width: 0, height: -2 },
           shadowOpacity: 0.1,
           shadowRadius: 4,
-          height: 65,
-          paddingBottom: 10,
-          paddingTop: 10,
+          height: 56,
+          paddingBottom: 0,
+          paddingTop: 0,
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: 0,
         },
+        tabBarItemStyle: { flex: 1, paddingVertical: 6 },
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: "600",

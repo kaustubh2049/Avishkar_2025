@@ -2,18 +2,26 @@ import React from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AlertTriangle, Droplets, CloudRain, Volume2 } from "lucide-react-native";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { FarmerHeader, AiFab } from "@/components/FarmerHeader";
+import { Card } from "@/components/ui/Card";
 
 export default function AlertsScreen() {
   return (
     <SafeAreaView style={styles.container}>
+      <FarmerHeader />
+      <AiFab />
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.headerRow}>
-          <Text style={styles.headerTitle}>Alerts</Text>
-          <TouchableOpacity style={styles.voiceButton}>
-            <Volume2 size={20} color="#0ea5e9" />
-            <Text style={styles.voiceText}>Read Aloud</Text>
-          </TouchableOpacity>
-        </View>
+        <PageHeader
+          title="Alerts & Notifications"
+          subtitle="Latest events affecting your farm"
+          rightElement={
+            <TouchableOpacity style={styles.voiceButton}>
+              <Volume2 size={20} color="#0ea5e9" />
+              <Text style={styles.voiceText}>Read Aloud</Text>
+            </TouchableOpacity>
+          }
+        />
 
         <AlertCard
           type="warning"
@@ -53,7 +61,7 @@ function AlertCard({ type, title, desc, time, icon: Icon }: any) {
   const color = colors[type as keyof typeof colors];
 
   return (
-    <View style={[styles.card, { backgroundColor: color.bg, borderColor: color.border }]}>
+    <Card style={[styles.card, { backgroundColor: color.bg, borderColor: color.border }]}> 
       <View style={styles.cardHeader}>
         <View style={[styles.iconBox, { backgroundColor: color.bg }]}>
           <Icon size={24} color={color.icon} />
@@ -64,7 +72,7 @@ function AlertCard({ type, title, desc, time, icon: Icon }: any) {
         </View>
       </View>
       <Text style={[styles.cardDesc, { color: color.text }]}>{desc}</Text>
-    </View>
+    </Card>
   );
 }
 
@@ -76,17 +84,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 20,
   },
-  headerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 24,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#0f172a",
-  },
+  
   voiceButton: {
     flexDirection: "row",
     alignItems: "center",

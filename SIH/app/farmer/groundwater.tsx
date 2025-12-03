@@ -2,9 +2,9 @@ import React from "react";
 import { View, Text, StyleSheet, ScrollView, Dimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack } from "expo-router";
+import { FarmerHeader, AiFab } from "@/components/FarmerHeader";
 import { Droplets, MapPin, TrendingUp } from "lucide-react-native";
 import { LineChart } from "react-native-chart-kit";
-import MapView, { Marker } from "react-native-maps";
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -12,6 +12,8 @@ export default function GroundwaterScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <Stack.Screen options={{ headerTitle: "Groundwater Status", headerBackTitle: "Home" }} />
+      <FarmerHeader />
+      <AiFab />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         
         {/* Live Status Card */}
@@ -27,34 +29,14 @@ export default function GroundwaterScreen() {
           <Text style={styles.locationText}>at your farm location</Text>
         </View>
 
-        {/* Nearby Stations Map */}
+        {/* Nearby Stations Map (placeholder – map disabled until native module is fixed) */}
         <Text style={styles.sectionTitle}>Nearby DWLR Stations (10km)</Text>
         <View style={styles.mapContainer}>
-          <MapView
-            style={styles.map}
-            initialRegion={{
-              latitude: 18.5204,
-              longitude: 73.8567,
-              latitudeDelta: 0.0922,
-              longitudeDelta: 0.0421,
-            }}
-          >
-            <Marker
-              coordinate={{ latitude: 18.5204, longitude: 73.8567 }}
-              title="Your Farm"
-              pinColor="blue"
-            />
-            <Marker
-              coordinate={{ latitude: 18.5304, longitude: 73.8667 }}
-              title="Station A"
-              pinColor="green"
-            />
-            <Marker
-              coordinate={{ latitude: 18.5104, longitude: 73.8467 }}
-              title="Station B"
-              pinColor="orange"
-            />
-          </MapView>
+          <View style={[styles.map, { alignItems: "center", justifyContent: "center" }]}>
+            <Text style={{ color: "#64748b", textAlign: "center" }}>
+              Map view temporarily disabled due to native library issue.
+            </Text>
+          </View>
         </View>
 
         {/* Prediction Graph */}

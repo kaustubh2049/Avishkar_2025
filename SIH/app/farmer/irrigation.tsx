@@ -2,12 +2,15 @@ import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack } from "expo-router";
+import { FarmerHeader, AiFab } from "@/components/FarmerHeader";
 import { CloudRain, Calendar, Clock, Droplets } from "lucide-react-native";
 
 export default function IrrigationScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <Stack.Screen options={{ headerTitle: "Irrigation Plan", headerBackTitle: "Home" }} />
+      <FarmerHeader />
+      <AiFab />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         
         {/* Main Action Card */}

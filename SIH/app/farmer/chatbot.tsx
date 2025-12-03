@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, KeyboardAvoidingView, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { FarmerHeader, AiFab } from "@/components/FarmerHeader";
 import { Send, Bot, User } from "lucide-react-native";
 
 export default function ChatbotScreen() {
@@ -25,10 +27,9 @@ export default function ChatbotScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>AI Assistant</Text>
-        <Text style={styles.headerSubtitle}>Ask in Hindi, Marathi, or English</Text>
-      </View>
+      <FarmerHeader />
+      <PageHeader title="AI Assistant" subtitle="Ask in Hindi, Marathi, or English" />
+      <AiFab />
 
       <FlatList
         data={messages}

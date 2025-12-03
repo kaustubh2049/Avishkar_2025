@@ -30,126 +30,89 @@ export interface WeatherData {
 }
 
 const API_KEY =
-  process.env.EXPO_PUBLIC_WEATHER_KEY || "d4306e31cc1e44d6059bae0f95107841";
-const BASE_URL = "https://api.openweathermap.org/data/2.5";
+  process.env.EXPO_PUBLIC_WEATHER_KEY || "d85450b8a3dc4ad78c7140734250312";
+const BASE_URL = "https://api.weatherapi.com/v1";
 
 export const fetchWeather = async (
   lat: number,
   lon: number
 ): Promise<WeatherData> => {
   try {
-    // Fetch current weather
-    const currentRes = await fetch(
-      `${BASE_URL}/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`
+    // Single call to WeatherAPI forecast endpoint (includes current + forecast)
+    const res = await fetch(
+      `${BASE_URL}/forecast.json?key=${API_KEY}&q=${lat},${lon}&days=5&aqi=no&alerts=no`
     );
-    const currentData = await currentRes.json();
+    const data = await res.json();
 
-    // Fetch 5 day forecast
-    const forecastRes = await fetch(
-      `${BASE_URL}/forecast?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`
-    );
-    const forecastData = await forecastRes.json();
-
-    // Fetch UV Index
-    const uvRes = await fetch(
-      `${BASE_URL}/uvi?lat=${lat}&lon=${lon}&appid=${API_KEY}`
-    );
-    const uvData = await uvRes.json();
-
-    if (currentData.cod === 401 || forecastData.cod === "401") {
-      console.warn("Invalid API Key. Using mock data.");
+    if (!res.ok || (data && data.error)) {
+      console.warn(
+        "WeatherAPI error:",
+        data?.error?.code,
+        data?.error?.message || res.statusText
+      );
       return getMockWeatherData();
     }
 
-    if (currentData.cod !== 200 || forecastData.cod !== "200") {
-      throw new Error(
-        currentData.message ||
-          forecastData.message ||
-          "Failed to fetch weather data"
-      );
+    const current = data.current;
+    const location = data.location;
+    const forecastDays: any[] = data.forecast?.forecastday ?? [];
+
+    const dewPoint =
+      typeof current.dewpoint_c === "number"
+        ? Math.round(current.dewpoint_c)
+        : Math.round(
+            current.temp_c - (100 - current.humidity) / 5 // fallback approximation
+          );
+
+    // Parse sunrise/sunset from first forecast day if available
+    let sunriseEpoch = 0;
+    let sunsetEpoch = 0;
+    if (forecastDays.length > 0) {
+      const first = forecastDays[0];
+      const dateStr = first.date; // yyyy-MM-dd
+      const sunriseStr: string | undefined = first.astro?.sunrise; // "06:15 AM"
+      const sunsetStr: string | undefined = first.astro?.sunset;
+
+      const toEpoch = (timeStr?: string) => {
+        if (!dateStr || !timeStr) return 0;
+        const d = new Date(`${dateStr} ${timeStr}`);
+        return isNaN(d.getTime()) ? 0 : Math.floor(d.getTime() / 1000);
+      };
+
+      sunriseEpoch = toEpoch(sunriseStr);
+      sunsetEpoch = toEpoch(sunsetStr);
     }
-
-    // Process forecast data to get daily summaries (approximate)
-    // The 5 day forecast returns data every 3 hours. We'll pick one reading per day (e.g., noon) or aggregate.
-    // For simplicity, we'll pick the reading closest to 12:00 PM for each distinct day.
-
-    const dailyForecasts: any[] = [];
-    const processedDates = new Set();
-
-    forecastData.list.forEach((item: any) => {
-      const date = new Date(item.dt * 1000).toLocaleDateString();
-      if (!processedDates.has(date)) {
-        // Check if this item is close to noon (12:00:00)
-        // Or just take the first one for the day if we haven't seen it yet (simple approach)
-        // Better: find the item with 'dt_txt' containing "12:00:00"
-        if (item.dt_txt.includes("12:00:00")) {
-          dailyForecasts.push(item);
-          processedDates.add(date);
-        } else if (
-          !dailyForecasts.find(
-            (f: any) => new Date(f.dt * 1000).toLocaleDateString() === date
-          )
-        ) {
-          // If we haven't added this date yet, add it tentatively (will be replaced if we find a noon one, or just kept)
-          // Actually, simpler logic: just group by date and take max/min temps.
-          // But for this UI, we just need a list. Let's just take the noon ones.
-          dailyForecasts.push(item);
-          processedDates.add(date);
-        }
-      }
-    });
-
-    // Ensure we have 5 days, if noon logic missed some (e.g. today if it's past noon), take what we have.
-    // We will filter to ensure unique dates.
-    const uniqueForecasts = dailyForecasts
-      .filter(
-        (item, index, self) =>
-          index ===
-          self.findIndex(
-            (t) =>
-              new Date(t.dt * 1000).getDate() ===
-              new Date(item.dt * 1000).getDate()
-          )
-      )
-      .slice(0, 5);
-
-    // Calculate dew point (approximation)
-    const dewPoint = Math.round(
-      currentData.main.temp - (100 - currentData.main.humidity) / 5
-    );
 
     return {
       current: {
-        temp: Math.round(currentData.main.temp),
-        condition: currentData.weather[0].main,
-        description: currentData.weather[0].description,
-        icon: currentData.weather[0].icon,
-        humidity: currentData.main.humidity,
-        windSpeed: currentData.wind?.speed || 0,
-        windDirection: currentData.wind?.deg || 0,
-        pressure: currentData.main.pressure,
-        visibility: currentData.visibility
-          ? Math.round((currentData.visibility / 1000) * 100) / 100
-          : 10,
-        feelsLike: Math.round(currentData.main.feels_like),
-        dewPoint: dewPoint,
-        uvIndex: uvData.value || Math.floor(Math.random() * 8) + 1,
-        sunrise: currentData.sys.sunrise,
-        sunset: currentData.sys.sunset,
-        city: currentData.name,
+        temp: Math.round(current.temp_c),
+        condition: current.condition?.text ?? "",
+        description: current.condition?.text ?? "",
+        icon: current.condition?.icon ?? "",
+        humidity: current.humidity,
+        windSpeed: current.wind_kph, // kph
+        windDirection: current.wind_degree,
+        pressure: current.pressure_mb,
+        visibility: current.vis_km,
+        feelsLike: Math.round(current.feelslike_c),
+        dewPoint,
+        uvIndex: current.uv ?? 0,
+        sunrise: sunriseEpoch,
+        sunset: sunsetEpoch,
+        city: location?.name ?? "",
       },
-      forecast: uniqueForecasts.map((item: any) => ({
-        dt: item.dt,
-        temp: Math.round(item.main.temp),
-        temp_min: Math.round(item.main.temp_min),
-        temp_max: Math.round(item.main.temp_max),
-        condition: item.weather[0].main,
-        icon: item.weather[0].icon,
-        date: new Date(item.dt * 1000).toLocaleDateString(undefined, {
+      forecast: forecastDays.slice(0, 5).map((fd: any) => ({
+        dt: fd.date_epoch,
+        temp: Math.round(fd.day?.avgtemp_c ?? fd.day?.maxtemp_c ?? 0),
+        temp_min: Math.round(fd.day?.mintemp_c ?? 0),
+        temp_max: Math.round(fd.day?.maxtemp_c ?? 0),
+        condition: fd.day?.condition?.text ?? "",
+        icon: fd.day?.condition?.icon ?? "",
+        date: new Date(fd.date).toLocaleDateString(undefined, {
           weekday: "short",
         }),
-        humidity: item.main.humidity,
-        windSpeed: item.wind?.speed || 0,
+        humidity: fd.day?.avghumidity ?? 0,
+        windSpeed: fd.day?.maxwind_kph ?? 0,
       })),
     };
   } catch (error) {

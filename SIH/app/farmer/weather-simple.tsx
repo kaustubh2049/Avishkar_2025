@@ -1,10 +1,13 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { FarmerHeader, AiFab } from "@/components/FarmerHeader";
 
 export default function WeatherSimple() {
   return (
     <SafeAreaView style={styles.container}>
+      <FarmerHeader />
+      <AiFab />
       <View style={styles.content}>
         <Text style={styles.title}>Weather</Text>
         <Text style={styles.subtitle}>Weather screen is working!</Text>

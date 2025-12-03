@@ -2,11 +2,10 @@ import { StationCard } from "@/components/station-card";
 import { StationMap } from "@/components/station-map";
 import { useStations } from "@/providers/stations-provider";
 import { router } from "expo-router";
-import { Bell, Droplet, Info, MapPin, RefreshCw, LogOut, Layers, CloudRain, Thermometer, Leaf, ChevronDown } from "lucide-react-native";
-import { useAuth } from "@/providers/auth-provider";
+import { Droplet, Info, Layers, CloudRain, Thermometer, Leaf, ChevronDown } from "lucide-react-native";
+import { FarmerHeader, AiFab } from "@/components/FarmerHeader";
 import React, { useState, useEffect } from "react";
 import {
-  ActivityIndicator,
   FlatList,
   StyleSheet,
   Text,
@@ -34,7 +33,6 @@ function MapScreenContent() {
     requestLocationPermission,
     estimatedLevel,
   } = useStations();
-  const { logout, user } = useAuth();
   const [activeLayer, setActiveLayer] = useState<MapLayer>("groundwater");
   const [isLayerMenuOpen, setIsLayerMenuOpen] = useState(false);
   const [isBottomSheetExpanded, setIsBottomSheetExpanded] = useState<boolean>(false);
@@ -71,21 +69,7 @@ function MapScreenContent() {
     }
   }, [userLocation, locationError]);
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-      router.replace("/login");
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
-  };
-
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "Good Morning";
-    if (hour < 18) return "Good Afternoon";
-    return "Good Evening";
-  };
+  
 
   const renderSummaryCard = (title: string, value: string, subtext: string, icon: any, color: string, bgColors: readonly [string, string, ...string[]]) => (
     <LinearGradient
@@ -107,58 +91,8 @@ function MapScreenContent() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Text style={styles.greetingText}>{getGreeting()},</Text>
-          <Text style={styles.userNameText}>{user?.name || "Farmer"}</Text>
-          
-          <View style={styles.locationContainer}>
-            {isLoadingLocation ? (
-              <View style={styles.locationStatus}>
-                <ActivityIndicator size="small" color="#0891b2" />
-                <Text style={styles.locationText}>Locating...</Text>
-              </View>
-            ) : userLocation ? (
-              <View style={styles.locationStatus}>
-                <MapPin size={12} color="#64748b" />
-                <Text style={styles.locationText}>
-                  {locationName}
-                </Text>
-              </View>
-            ) : (
-              <TouchableOpacity onPress={requestLocationPermission} style={styles.locationStatus}>
-                <Text style={[styles.locationText, { color: '#dc2626' }]}>Enable Location</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
-        
-        <View style={styles.headerRight}>
-          <TouchableOpacity 
-            style={styles.iconButton}
-            onPress={() => router.push("/farmer/alerts")}
-          >
-            <Bell size={22} color="#64748b" />
-            <View style={styles.notificationBadge} />
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.iconButton}
-            onPress={requestLocationPermission}
-            disabled={isLoadingLocation}
-          >
-            {isLoadingLocation ? (
-              <ActivityIndicator size={20} color="#0891b2" />
-            ) : (
-              <RefreshCw size={20} color="#0891b2" />
-            )}
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton} onPress={handleLogout}>
-            <LogOut size={22} color="#64748b" />
-          </TouchableOpacity>
-        </View>
-      </View>
+      <FarmerHeader />
+      <AiFab />
       <View style={styles.summaryContainer}>
         <ScrollView 
           horizontal 

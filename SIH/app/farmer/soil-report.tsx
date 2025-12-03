@@ -2,12 +2,15 @@ import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack } from "expo-router";
+import { FarmerHeader, AiFab } from "@/components/FarmerHeader";
 import { Sprout, AlertCircle, CheckCircle2 } from "lucide-react-native";
 
 export default function SoilReportScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <Stack.Screen options={{ headerTitle: "Soil Health", headerBackTitle: "Home" }} />
+      <FarmerHeader />
+      <AiFab />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         
         {/* Overall Score */}

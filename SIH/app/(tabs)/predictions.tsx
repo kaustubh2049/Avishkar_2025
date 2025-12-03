@@ -8,7 +8,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
-import { predictGroundwater, type PredictionResult } from '../services/predictionService';
+import { predictGroundwater, type PredictionResult } from '../../services/predictionService';
 
 type RiskStatus = 'Safe' | 'Watch' | 'Alert' | 'Critical';
 

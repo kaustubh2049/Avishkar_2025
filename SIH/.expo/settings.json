@@ -1,6 +1,14 @@
 {
+<<<<<<< HEAD
   "urlRandomness": "kmdS6GM",
   "dev": true,
   "minify": false,
+=======
+  "hostType": "lan",
+  "lanType": "ip",
+  "dev": true,
+  "minify": false,
+  "urlRandomness": null,
+>>>>>>> 22c8f45db6a2a4b5e595bb9da00c5fb03d6418bb
   "https": false
 }

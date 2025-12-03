@@ -32,6 +32,8 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { useStations } from "@/providers/stations-provider";
 import { fetchWeather, WeatherData } from "@/services/weather-service";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { FarmerHeader, AiFab } from "@/components/FarmerHeader";
 
 const { width } = Dimensions.get("window");
 
@@ -168,13 +170,11 @@ export default function WeatherScreen() {
   // Main weather display
   return (
     <SafeAreaView style={styles.container}>
+      <FarmerHeader />
+      <AiFab />
       <ScrollView style={styles.scrollContent}>
         {/* Header */}
-        <View style={styles.headerContainer}>
-          <Text style={styles.locationText}>
-            {weather?.current.city || "Current Location"}
-          </Text>
-        </View>
+        <PageHeader title="Weather" subtitle={weather?.current.city || "Current Location"} />
 
         {/* Main Weather Card */}
         <LinearGradient
@@ -213,21 +213,17 @@ export default function WeatherScreen() {
           </View>
         </LinearGradient>
 
-        {/* Hourly Forecast */}
+        {/* Compact upcoming forecast strip (Google Weather-style) */}
         <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>Hourly Forecast</Text>
+          <Text style={styles.sectionTitle}>Next Days</Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.hourlyContainer}
           >
-            {weather?.forecast.slice(0, 8).map((item, index) => (
+            {weather?.forecast.slice(0, 5).map((item, index) => (
               <View key={index} style={styles.hourlyItem}>
-                <Text style={styles.hourlyTime}>
-                  {new Date(item.dt * 1000).toLocaleTimeString([], {
-                    hour: "2-digit",
-                  })}
-                </Text>
+                <Text style={styles.hourlyTime}>{item.date}</Text>
                 {getWeatherIcon(item.condition, 32)}
                 <Text style={styles.hourlyTemp}>{item.temp}°</Text>
                 <Text style={styles.hourlyHumidity}>{item.humidity}%</Text>
@@ -236,7 +232,7 @@ export default function WeatherScreen() {
           </ScrollView>
         </View>
 
-        {/* 7-Day Forecast */}
+        {/* 7-Day style Forecast list */}
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>7-Day Forecast</Text>
           {weather?.forecast.slice(0, 5).map((item, index) => (

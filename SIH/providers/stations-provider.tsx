@@ -225,11 +225,11 @@ const mockAlerts: Alert[] = [
     id: "alert_002",
     stationId: "DWLR_002",
     stationName: "Worli",
-    type: "warning",
-    title: "Low Battery Alert",
+    type: "critical",
+    title: "Sensor Failure Detected",
     message:
-      "Station battery level is at 40%. Please schedule maintenance soon.",
-    timestamp: "2025-09-11T08:30:00Z",
+      "One or more sensors have stopped responding at this station. Please inspect and service immediately.",
+    timestamp: "2025-09-11T08:55:00Z",
     isRead: false,
   },
   {
