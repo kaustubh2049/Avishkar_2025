@@ -1,18 +1,25 @@
 import React from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack } from "expo-router";
-import { FarmerHeader, AiFab } from "@/components/FarmerHeader";
+import { FarmerHeader } from "@/components/FarmerHeader";
 import { Landmark, TrendingUp, ExternalLink } from "lucide-react-native";
 
 export default function SchemesScreen() {
   return (
     <SafeAreaView style={styles.container}>
-      <Stack.Screen options={{ headerTitle: "Schemes & Market", headerBackTitle: "Home" }} />
+      <Stack.Screen
+        options={{ headerTitle: "Schemes & Market", headerBackTitle: "Home" }}
+      />
       <FarmerHeader />
       <AiFab />
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        
         {/* Market Prices */}
         <Text style={styles.sectionTitle}>Live Mandi Prices</Text>
         <View style={styles.marketCard}>
@@ -38,7 +45,7 @@ export default function SchemesScreen() {
 
         {/* Govt Schemes */}
         <Text style={styles.sectionTitle}>Government Schemes</Text>
-        
+
         <SchemeCard
           title="PM-KUSUM Yojana"
           desc="Subsidies for solar pumps and renewable energy plants on farm land."
@@ -54,13 +61,20 @@ export default function SchemesScreen() {
           desc="Get soil nutrient status and fertilizer recommendations."
           tag="Soil Health"
         />
-
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function SchemeCard({ title, desc, tag }: { title: string; desc: string; tag: string }) {
+function SchemeCard({
+  title,
+  desc,
+  tag,
+}: {
+  title: string;
+  desc: string;
+  tag: string;
+}) {
   return (
     <TouchableOpacity style={styles.schemeCard} activeOpacity={0.8}>
       <View style={styles.schemeHeader}>

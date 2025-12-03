@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet, ScrollView, Dimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack } from "expo-router";
-import { FarmerHeader, AiFab } from "@/components/FarmerHeader";
+import { FarmerHeader } from "@/components/FarmerHeader";
 import { Droplets, MapPin, TrendingUp } from "lucide-react-native";
 import { LineChart } from "react-native-chart-kit";
 
@@ -11,11 +11,12 @@ const screenWidth = Dimensions.get("window").width;
 export default function GroundwaterScreen() {
   return (
     <SafeAreaView style={styles.container}>
-      <Stack.Screen options={{ headerTitle: "Groundwater Status", headerBackTitle: "Home" }} />
+      <Stack.Screen
+        options={{ headerTitle: "Groundwater Status", headerBackTitle: "Home" }}
+      />
       <FarmerHeader />
       <AiFab />
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        
         {/* Live Status Card */}
         <View style={styles.statusCard}>
           <View style={styles.statusHeader}>
@@ -32,7 +33,12 @@ export default function GroundwaterScreen() {
         {/* Nearby Stations Map (placeholder – map disabled until native module is fixed) */}
         <Text style={styles.sectionTitle}>Nearby DWLR Stations (10km)</Text>
         <View style={styles.mapContainer}>
-          <View style={[styles.map, { alignItems: "center", justifyContent: "center" }]}>
+          <View
+            style={[
+              styles.map,
+              { alignItems: "center", justifyContent: "center" },
+            ]}
+          >
             <Text style={{ color: "#64748b", textAlign: "center" }}>
               Map view temporarily disabled due to native library issue.
             </Text>
@@ -79,11 +85,11 @@ export default function GroundwaterScreen() {
           <View style={styles.insightBox}>
             <TrendingUp size={20} color="#0ea5e9" />
             <Text style={styles.insightText}>
-              Water level is expected to remain stable for the next week. Good for irrigation.
+              Water level is expected to remain stable for the next week. Good
+              for irrigation.
             </Text>
           </View>
         </View>
-
       </ScrollView>
     </SafeAreaView>
   );

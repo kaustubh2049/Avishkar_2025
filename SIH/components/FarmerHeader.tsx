@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
 import { useStations } from "@/providers/stations-provider";
 import { useAuth } from "@/providers/auth-provider";
 import { router } from "expo-router";
@@ -8,7 +14,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Location from "expo-location";
 
 export function FarmerHeader() {
-  const { userLocation, isLoadingLocation, requestLocationPermission, locationError } = useStations();
+  const {
+    userLocation,
+    isLoadingLocation,
+    requestLocationPermission,
+    locationError,
+  } = useStations();
   const { user, logout } = useAuth();
   const [locationName, setLocationName] = useState<string>("Locating...");
 
@@ -21,11 +32,17 @@ export function FarmerHeader() {
             longitude: userLocation.longitude,
           });
           if (address) {
-            const name = [address.city, address.region, address.country].filter(Boolean).join(", ");
+            const name = [address.city, address.region, address.country]
+              .filter(Boolean)
+              .join(", ");
             setLocationName(name || "Unknown Location");
           }
         } catch (e) {
-          setLocationName(`${userLocation.latitude.toFixed(2)}, ${userLocation.longitude.toFixed(2)}`);
+          setLocationName(
+            `${userLocation.latitude.toFixed(
+              2
+            )}, ${userLocation.longitude.toFixed(2)}`
+          );
         }
       })();
     } else if (locationError) {
@@ -64,19 +81,31 @@ export function FarmerHeader() {
               <Text style={styles.locationText}>{locationName}</Text>
             </View>
           ) : (
-            <TouchableOpacity onPress={requestLocationPermission} style={styles.locationStatus}>
-              <Text style={[styles.locationText, { color: "#dc2626" }]}>Enable Location</Text>
+            <TouchableOpacity
+              onPress={requestLocationPermission}
+              style={styles.locationStatus}
+            >
+              <Text style={[styles.locationText, { color: "#dc2626" }]}>
+                Enable Location
+              </Text>
             </TouchableOpacity>
           )}
         </View>
       </View>
 
       <View style={styles.headerRight}>
-        <TouchableOpacity style={styles.iconButton} onPress={() => router.push("/farmer/alerts")}>
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={() => router.push("/farmer/alerts")}
+        >
           <Bell size={22} color="#64748b" />
           <View style={styles.notificationBadge} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton} onPress={requestLocationPermission} disabled={isLoadingLocation}>
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={requestLocationPermission}
+          disabled={isLoadingLocation}
+        >
           {isLoadingLocation ? (
             <ActivityIndicator size={20} color="#0891b2" />
           ) : (
@@ -98,7 +127,7 @@ export function AiFab() {
       <TouchableOpacity
         activeOpacity={0.9}
         onPress={() => router.push("/farmer/chatbot")}
-        style={[styles.fabButton, { bottom: (insets.bottom || 0) + 72 }]}
+        style={[styles.fabButton, { bottom: 240 }]}
       >
         <Bot size={24} color="#ffffff" />
         <Text style={styles.fabLabel}>AI</Text>
@@ -137,9 +166,19 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 12,
   },
-  locationText: { fontSize: 12, color: "#64748b", marginLeft: 4, fontWeight: "500" },
+  locationText: {
+    fontSize: 12,
+    color: "#64748b",
+    marginLeft: 4,
+    fontWeight: "500",
+  },
   headerRight: { flexDirection: "row", alignItems: "center", gap: 12 },
-  iconButton: { padding: 8, backgroundColor: "#f1f5f9", borderRadius: 12, position: "relative" },
+  iconButton: {
+    padding: 8,
+    backgroundColor: "#f1f5f9",
+    borderRadius: 12,
+    position: "relative",
+  },
   notificationBadge: {
     position: "absolute",
     top: 8,
@@ -157,6 +196,7 @@ const styles = StyleSheet.create({
     right: 0,
     top: 0,
     bottom: 0,
+    zIndex: 100,
   },
   fabButton: {
     position: "absolute",
@@ -170,11 +210,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    elevation: 6,
+    elevation: 8,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    zIndex: 101,
   },
   fabLabel: {
     color: "#ffffff",
@@ -182,4 +223,3 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 });
-

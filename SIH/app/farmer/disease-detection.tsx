@@ -1,10 +1,27 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, useWindowDimensions, Keyboard, Platform } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  useWindowDimensions,
+  Keyboard,
+  Platform,
+} from "react-native";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Stack } from "expo-router";
-import { Camera, Upload, AlertTriangle, CheckCircle } from "lucide-react-native";
-import { FarmerHeader, AiFab } from "@/components/FarmerHeader";
+import {
+  Camera,
+  Upload,
+  AlertTriangle,
+  CheckCircle,
+} from "lucide-react-native";
+import { FarmerHeader } from "@/components/FarmerHeader";
 
 export default function DiseaseDetectionScreen() {
   const [result, setResult] = useState<null | any>(null);
@@ -17,7 +34,9 @@ export default function DiseaseDetectionScreen() {
   useEffect(() => {
     const show = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
     const hide = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
-    const s = Keyboard.addListener(show, (e: any) => setKeyboardPadding(e.endCoordinates?.height || 0));
+    const s = Keyboard.addListener(show, (e: any) =>
+      setKeyboardPadding(e.endCoordinates?.height || 0)
+    );
     const h = Keyboard.addListener(hide, () => setKeyboardPadding(0));
     return () => {
       s.remove();
@@ -36,14 +55,14 @@ export default function DiseaseDetectionScreen() {
         causes: [
           "Fungal infection (Alternaria solani)",
           "Warm temperatures (24-29°C)",
-          "High humidity or frequent rainfall"
+          "High humidity or frequent rainfall",
         ],
         remedies: [
           "Apply fungicides containing Mancozeb or Chlorothalonil.",
           "Improve air circulation by spacing plants properly.",
           "Remove and destroy infected leaves immediately.",
-          "Use drip irrigation to keep foliage dry."
-        ]
+          "Use drip irrigation to keep foliage dry.",
+        ],
       });
       setAnalyzing(false);
     }, 2000);
@@ -51,9 +70,10 @@ export default function DiseaseDetectionScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Stack.Screen options={{ headerTitle: "Scan Crop", headerBackTitle: "Home" }} />
+      <Stack.Screen
+        options={{ headerTitle: "Scan Crop", headerBackTitle: "Home" }}
+      />
       <FarmerHeader />
-      <AiFab />
       <View style={{ flex: 1 }}>
         <ScrollView
           contentContainerStyle={[
@@ -61,18 +81,32 @@ export default function DiseaseDetectionScreen() {
             { paddingBottom: 20 + keyboardPadding + insets.bottom },
           ]}
         >
-          <PageHeader title="Scan Crop" subtitle="Detect crop issues from photos" />
-          <View style={{ flexDirection: isLandscape ? "row" : "column", gap: 16 }}>
+          <PageHeader
+            title="Scan Crop"
+            subtitle="Detect crop issues from photos"
+          />
+          <View
+            style={{ flexDirection: isLandscape ? "row" : "column", gap: 16 }}
+          >
             {/* Upload Area */}
-            <View style={[styles.uploadCard, isLandscape && { flex: 1 }]}> 
+            <View style={[styles.uploadCard, isLandscape && { flex: 1 }]}>
               <View style={styles.iconContainer}>
                 <Camera size={48} color="#94a3b8" />
               </View>
               <Text style={styles.uploadTitle}>Take a Photo or Upload</Text>
-              <Text style={styles.uploadSubtitle}>Align the leaf within the frame. Ensure good lighting.</Text>
+              <Text style={styles.uploadSubtitle}>
+                Align the leaf within the frame. Ensure good lighting.
+              </Text>
 
               {/* Crop Overlay */}
-              <View style={[styles.overlayContainer, isLandscape ? styles.overlayLandscape : styles.overlayPortrait]}>
+              <View
+                style={[
+                  styles.overlayContainer,
+                  isLandscape
+                    ? styles.overlayLandscape
+                    : styles.overlayPortrait,
+                ]}
+              >
                 <View style={styles.overlayFrame}>
                   <View style={styles.gridVertical}>
                     <View style={styles.gridCellV} />
@@ -85,24 +119,40 @@ export default function DiseaseDetectionScreen() {
                     <View style={[styles.gridCellH, styles.gridDividerH]} />
                   </View>
                 </View>
-                <Text style={styles.overlayHint}>Place the affected area inside the frame</Text>
+                <Text style={styles.overlayHint}>
+                  Place the affected area inside the frame
+                </Text>
               </View>
 
               <View style={styles.buttonRow}>
-                <TouchableOpacity style={styles.actionButton} onPress={handleScan} disabled={analyzing}>
+                <TouchableOpacity
+                  style={styles.actionButton}
+                  onPress={handleScan}
+                  disabled={analyzing}
+                >
                   <Camera size={20} color="#fff" />
-                  <Text style={styles.buttonText}>{analyzing ? "Analyzing..." : "Camera"}</Text>
+                  <Text style={styles.buttonText}>
+                    {analyzing ? "Analyzing..." : "Camera"}
+                  </Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.actionButton, styles.secondaryButton]} onPress={handleScan} disabled={analyzing}>
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.secondaryButton]}
+                  onPress={handleScan}
+                  disabled={analyzing}
+                >
                   <Upload size={20} color="#0ea5e9" />
-                  <Text style={[styles.buttonText, styles.secondaryButtonText]}>Gallery</Text>
+                  <Text style={[styles.buttonText, styles.secondaryButtonText]}>
+                    Gallery
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
 
             {/* Result Section */}
             {result && !analyzing && (
-              <View style={[styles.resultContainer, isLandscape && { flex: 1 }]}> 
+              <View
+                style={[styles.resultContainer, isLandscape && { flex: 1 }]}
+              >
                 <Text style={styles.sectionTitle}>Analysis Report</Text>
                 <View style={styles.resultCard}>
                   <View style={styles.resultHeader}>
@@ -110,9 +160,28 @@ export default function DiseaseDetectionScreen() {
                       <Text style={styles.label}>Detected Disease</Text>
                       <Text style={styles.diseaseName}>{result.disease}</Text>
                     </View>
-                    <View style={[styles.severityBadge, result.severity === 'High' ? styles.bgRed : styles.bgYellow]}>
-                      <AlertTriangle size={14} color={result.severity === 'High' ? "#991b1b" : "#854d0e"} />
-                      <Text style={[styles.severityText, result.severity === 'High' ? styles.textRed : styles.textYellow]}>
+                    <View
+                      style={[
+                        styles.severityBadge,
+                        result.severity === "High"
+                          ? styles.bgRed
+                          : styles.bgYellow,
+                      ]}
+                    >
+                      <AlertTriangle
+                        size={14}
+                        color={
+                          result.severity === "High" ? "#991b1b" : "#854d0e"
+                        }
+                      />
+                      <Text
+                        style={[
+                          styles.severityText,
+                          result.severity === "High"
+                            ? styles.textRed
+                            : styles.textYellow,
+                        ]}
+                      >
                         {result.severity} Severity
                       </Text>
                     </View>
@@ -136,14 +205,20 @@ export default function DiseaseDetectionScreen() {
                     <Text style={styles.subTitle}>Recommended Treatment</Text>
                     {result.remedies.map((remedy: string, index: number) => (
                       <View key={index} style={styles.listItem}>
-                        <CheckCircle size={16} color="#16a34a" style={{ marginTop: 2 }} />
+                        <CheckCircle
+                          size={16}
+                          color="#16a34a"
+                          style={{ marginTop: 2 }}
+                        />
                         <Text style={styles.listText}>{remedy}</Text>
                       </View>
                     ))}
                   </View>
 
                   <TouchableOpacity style={styles.buyButton}>
-                    <Text style={styles.buyButtonText}>Find Remedies Nearby</Text>
+                    <Text style={styles.buyButtonText}>
+                      Find Remedies Nearby
+                    </Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -179,8 +254,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 16,
   },
-  overlayPortrait: { aspectRatio: 3/4 },
-  overlayLandscape: { aspectRatio: 16/9 },
+  overlayPortrait: { aspectRatio: 3 / 4 },
+  overlayLandscape: { aspectRatio: 16 / 9 },
   overlayFrame: {
     flex: 1,
     width: "100%",

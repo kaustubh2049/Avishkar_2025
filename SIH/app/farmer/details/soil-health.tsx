@@ -17,7 +17,7 @@ import {
   Droplets,
   AlertCircle,
 } from "lucide-react-native";
-import { FarmerHeader, AiFab } from "@/components/FarmerHeader";
+import { FarmerHeader } from "@/components/FarmerHeader";
 
 const SoilHealthDetails = () => {
   const router = useRouter();
@@ -75,7 +75,6 @@ const SoilHealthDetails = () => {
         </View>
       </LinearGradient>
       <FarmerHeader />
-      <AiFab />
 
       <ScrollView style={styles.content}>
         {/* Soil Health Score */}

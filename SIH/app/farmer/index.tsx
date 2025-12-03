@@ -2,7 +2,15 @@ import { StationCard } from "@/components/station-card";
 import { StationMap } from "@/components/station-map";
 import { useStations } from "@/providers/stations-provider";
 import { router } from "expo-router";
-import { Droplet, Info, Layers, CloudRain, Thermometer, Leaf, ChevronDown } from "lucide-react-native";
+import {
+  Droplet,
+  Info,
+  Layers,
+  CloudRain,
+  Thermometer,
+  Leaf,
+  ChevronDown,
+} from "lucide-react-native";
 import { FarmerHeader, AiFab } from "@/components/FarmerHeader";
 import React, { useState, useEffect } from "react";
 import {
@@ -12,11 +20,11 @@ import {
   TouchableOpacity,
   View,
   ScrollView,
-  Dimensions
+  Dimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import * as Location from 'expo-location';
+import * as Location from "expo-location";
 import { fetchWeather, WeatherData } from "@/services/weather-service";
 
 const { width } = Dimensions.get("window");
@@ -24,25 +32,28 @@ const { width } = Dimensions.get("window");
 type MapLayer = "groundwater" | "rainfall" | "soil" | "crop";
 
 function MapScreenContent() {
-  const { 
-    stations, 
-    nearbyStations, 
-    userLocation, 
-    isLoadingLocation, 
-    locationError, 
+  const {
+    stations,
+    nearbyStations,
+    userLocation,
+    isLoadingLocation,
+    locationError,
     requestLocationPermission,
     estimatedLevel,
   } = useStations();
   const [activeLayer, setActiveLayer] = useState<MapLayer>("groundwater");
   const [isLayerMenuOpen, setIsLayerMenuOpen] = useState(false);
-  const [isBottomSheetExpanded, setIsBottomSheetExpanded] = useState<boolean>(false);
+  const [isBottomSheetExpanded, setIsBottomSheetExpanded] =
+    useState<boolean>(false);
   const [locationName, setLocationName] = useState<string>("Locating...");
   const insets = useSafeAreaInsets();
   const [weather, setWeather] = useState<WeatherData | null>(null);
 
   useEffect(() => {
     if (userLocation) {
-      fetchWeather(userLocation.latitude, userLocation.longitude).then(setWeather);
+      fetchWeather(userLocation.latitude, userLocation.longitude).then(
+        setWeather
+      );
     }
   }, [userLocation]);
 
@@ -55,11 +66,17 @@ function MapScreenContent() {
             longitude: userLocation.longitude,
           });
           if (address) {
-            const name = [address.city, address.region, address.country].filter(Boolean).join(", ");
+            const name = [address.city, address.region, address.country]
+              .filter(Boolean)
+              .join(", ");
             setLocationName(name || "Unknown Location");
           }
         } catch (e) {
-          setLocationName(`${userLocation.latitude.toFixed(2)}, ${userLocation.longitude.toFixed(2)}`);
+          setLocationName(
+            `${userLocation.latitude.toFixed(
+              2
+            )}, ${userLocation.longitude.toFixed(2)}`
+          );
         }
       })();
     } else if (locationError) {
@@ -69,9 +86,14 @@ function MapScreenContent() {
     }
   }, [userLocation, locationError]);
 
-  
-
-  const renderSummaryCard = (title: string, value: string, subtext: string, icon: any, color: string, bgColors: readonly [string, string, ...string[]]) => (
+  const renderSummaryCard = (
+    title: string,
+    value: string,
+    subtext: string,
+    icon: any,
+    color: string,
+    bgColors: readonly [string, string, ...string[]]
+  ) => (
     <LinearGradient
       colors={bgColors}
       start={{ x: 0, y: 0 }}
@@ -79,7 +101,12 @@ function MapScreenContent() {
       style={styles.summaryCard}
     >
       <View style={styles.summaryCardHeader}>
-        <View style={[styles.iconContainer, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+        <View
+          style={[
+            styles.iconContainer,
+            { backgroundColor: "rgba(255,255,255,0.2)" },
+          ]}
+        >
           {icon}
         </View>
         <Text style={styles.summaryCardTitle}>{title}</Text>
@@ -94,8 +121,8 @@ function MapScreenContent() {
       <FarmerHeader />
       <AiFab />
       <View style={styles.summaryContainer}>
-        <ScrollView 
-          horizontal 
+        <ScrollView
+          horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.summaryContent}
         >
@@ -113,7 +140,9 @@ function MapScreenContent() {
           {renderSummaryCard(
             "Weather",
             weather ? `${weather.current.temp}°C` : "--",
-            weather ? `${weather.current.condition} • ${weather.current.humidity}% Hum` : "Loading...",
+            weather
+              ? `${weather.current.condition} • ${weather.current.humidity}% Hum`
+              : "Loading...",
             <CloudRain size={20} color="#fff" />,
             "#f59e0b",
             ["#f59e0b", "#d97706"]
@@ -141,7 +170,7 @@ function MapScreenContent() {
           </View>
         </View>
 
-        <View style={{ flex: 1, position: 'relative' }}>
+        <View style={{ flex: 1, position: "relative" }}>
           <StationMap
             stations={stations} // Pass all stations, map component can handle filtering if needed
             userLocation={userLocation}
@@ -153,34 +182,86 @@ function MapScreenContent() {
             {isLayerMenuOpen && (
               <View style={styles.layerMenu}>
                 <Text style={styles.layerMenuTitle}>Map Layers</Text>
-                
-                <TouchableOpacity 
-                  style={[styles.layerOption, activeLayer === 'groundwater' && styles.layerOptionActive]}
-                  onPress={() => { setActiveLayer('groundwater'); setIsLayerMenuOpen(false); }}
+
+                <TouchableOpacity
+                  style={[
+                    styles.layerOption,
+                    activeLayer === "groundwater" && styles.layerOptionActive,
+                  ]}
+                  onPress={() => {
+                    setActiveLayer("groundwater");
+                    setIsLayerMenuOpen(false);
+                  }}
                 >
-                  <Droplet size={16} color={activeLayer === 'groundwater' ? "#0ea5e9" : "#64748b"} />
-                  <Text style={[styles.layerOptionText, activeLayer === 'groundwater' && styles.layerOptionTextActive]}>Groundwater</Text>
+                  <Droplet
+                    size={16}
+                    color={
+                      activeLayer === "groundwater" ? "#0ea5e9" : "#64748b"
+                    }
+                  />
+                  <Text
+                    style={[
+                      styles.layerOptionText,
+                      activeLayer === "groundwater" &&
+                        styles.layerOptionTextActive,
+                    ]}
+                  >
+                    Groundwater
+                  </Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity 
-                  style={[styles.layerOption, activeLayer === 'rainfall' && styles.layerOptionActive]}
-                  onPress={() => { setActiveLayer('rainfall'); setIsLayerMenuOpen(false); }}
+                <TouchableOpacity
+                  style={[
+                    styles.layerOption,
+                    activeLayer === "rainfall" && styles.layerOptionActive,
+                  ]}
+                  onPress={() => {
+                    setActiveLayer("rainfall");
+                    setIsLayerMenuOpen(false);
+                  }}
                 >
-                  <CloudRain size={16} color={activeLayer === 'rainfall' ? "#0ea5e9" : "#64748b"} />
-                  <Text style={[styles.layerOptionText, activeLayer === 'rainfall' && styles.layerOptionTextActive]}>Rainfall Heatmap</Text>
+                  <CloudRain
+                    size={16}
+                    color={activeLayer === "rainfall" ? "#0ea5e9" : "#64748b"}
+                  />
+                  <Text
+                    style={[
+                      styles.layerOptionText,
+                      activeLayer === "rainfall" &&
+                        styles.layerOptionTextActive,
+                    ]}
+                  >
+                    Rainfall Heatmap
+                  </Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity 
-                  style={[styles.layerOption, activeLayer === 'soil' && styles.layerOptionActive]}
-                  onPress={() => { setActiveLayer('soil'); setIsLayerMenuOpen(false); }}
+                <TouchableOpacity
+                  style={[
+                    styles.layerOption,
+                    activeLayer === "soil" && styles.layerOptionActive,
+                  ]}
+                  onPress={() => {
+                    setActiveLayer("soil");
+                    setIsLayerMenuOpen(false);
+                  }}
                 >
-                  <Leaf size={16} color={activeLayer === 'soil' ? "#0ea5e9" : "#64748b"} />
-                  <Text style={[styles.layerOptionText, activeLayer === 'soil' && styles.layerOptionTextActive]}>Soil Moisture</Text>
+                  <Leaf
+                    size={16}
+                    color={activeLayer === "soil" ? "#0ea5e9" : "#64748b"}
+                  />
+                  <Text
+                    style={[
+                      styles.layerOptionText,
+                      activeLayer === "soil" && styles.layerOptionTextActive,
+                    ]}
+                  >
+                    Soil Moisture
+                  </Text>
                 </TouchableOpacity>
               </View>
             )}
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={styles.layerFab}
               onPress={() => setIsLayerMenuOpen(!isLayerMenuOpen)}
             >
@@ -191,7 +272,12 @@ function MapScreenContent() {
       </View>
 
       {/* Bottom Sheet (Nearby Insights) */}
-      <View style={[styles.bottomSheet, isBottomSheetExpanded && styles.bottomSheetExpanded]}>
+      <View
+        style={[
+          styles.bottomSheet,
+          isBottomSheetExpanded && styles.bottomSheetExpanded,
+        ]}
+      >
         <TouchableOpacity
           style={styles.bottomSheetHandle}
           onPress={() => setIsBottomSheetExpanded(!isBottomSheetExpanded)}
@@ -206,11 +292,19 @@ function MapScreenContent() {
               {nearbyStations.length} stations within 50km
             </Text>
           </View>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.expandButton}
             onPress={() => setIsBottomSheetExpanded(!isBottomSheetExpanded)}
           >
-            <ChevronDown size={20} color="#64748b" style={{ transform: [{ rotate: isBottomSheetExpanded ? '180deg' : '0deg' }] }} />
+            <ChevronDown
+              size={20}
+              color="#64748b"
+              style={{
+                transform: [
+                  { rotate: isBottomSheetExpanded ? "180deg" : "0deg" },
+                ],
+              }}
+            />
           </TouchableOpacity>
         </View>
 
@@ -234,9 +328,7 @@ function MapScreenContent() {
 }
 
 export default function MapScreen() {
-  return (
-    <MapScreenContent />
-  );
+  return <MapScreenContent />;
 }
 
 const styles = StyleSheet.create({
@@ -366,7 +458,7 @@ const styles = StyleSheet.create({
   mapContainer: {
     flex: 1,
     margin: 10,
-    marginBottom: 110,
+    marginBottom: 160,
     borderRadius: 24,
     overflow: "hidden",
     borderWidth: 1,
@@ -470,14 +562,14 @@ const styles = StyleSheet.create({
   },
   bottomSheet: {
     position: "absolute",
-    bottom: 0,
+    bottom: 56,
     left: 0,
     right: 0,
     backgroundColor: "white",
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingTop: 8,
-    height: 100,
+    height: 120,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.1,
@@ -486,7 +578,8 @@ const styles = StyleSheet.create({
     zIndex: 50,
   },
   bottomSheetExpanded: {
-    height: "75%",
+    height: "65%",
+    bottom: 56,
     zIndex: 60,
   },
   bottomSheetHandle: {
