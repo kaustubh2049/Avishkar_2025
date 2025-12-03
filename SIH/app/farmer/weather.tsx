@@ -438,7 +438,10 @@ export default function WeatherScreen() {
                 ].map((city, index) => (
                   <TouchableOpacity
                     key={index}
-                    style={[styles.mapPoint, { left: city.x as any, top: city.y as any }]}
+                    style={[
+                      styles.mapPoint,
+                      { left: city.x as any, top: city.y as any },
+                    ]}
                   >
                     <View style={styles.mapPointDot} />
                     <View style={styles.mapPointLabel}>
@@ -586,7 +589,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 16,
   },
-  
+
   // Section styles
   sectionContainer: {
     backgroundColor: "#ffffff",
@@ -600,19 +603,19 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
-  
+
   sectionTitle: {
     fontSize: 18,
     fontWeight: "700",
     color: "#0f172a",
     marginBottom: 16,
   },
-  
+
   // Hourly forecast styles
   hourlyContainer: {
     paddingHorizontal: 4,
   },
-  
+
   hourlyItem: {
     alignItems: "center",
     marginRight: 16,
@@ -622,27 +625,27 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     minWidth: 70,
   },
-  
+
   hourlyTime: {
     fontSize: 12,
     color: "#64748b",
     fontWeight: "500",
     marginBottom: 8,
   },
-  
+
   hourlyTemp: {
     fontSize: 16,
     fontWeight: "700",
     color: "#0f172a",
     marginTop: 8,
   },
-  
+
   hourlyHumidity: {
     fontSize: 12,
     color: "#64748b",
     marginTop: 4,
   },
-  
+
   // Daily forecast styles
   dailyItem: {
     flexDirection: "row",
@@ -652,45 +655,45 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#f1f5f9",
   },
-  
+
   dailyDay: {
     fontSize: 16,
     fontWeight: "600",
     color: "#0f172a",
     width: 80,
   },
-  
+
   dailyIconTemp: {
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
     marginLeft: 16,
   },
-  
+
   dailyCondition: {
     fontSize: 14,
     color: "#64748b",
     marginLeft: 8,
   },
-  
+
   dailyTempRange: {
     flexDirection: "row",
     alignItems: "center",
     minWidth: 80,
   },
-  
+
   dailyTempMax: {
     fontSize: 16,
     fontWeight: "700",
     color: "#0f172a",
   },
-  
+
   dailyTempMin: {
     fontSize: 16,
     color: "#64748b",
     marginLeft: 8,
   },
-  
+
   // Details grid styles
   detailsGrid: {
     flexDirection: "row",
@@ -699,7 +702,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     gap: 12,
   },
-  
+
   detailCard: {
     backgroundColor: "#ffffff",
     borderRadius: 16,
@@ -711,32 +714,32 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
-  
+
   detailHeader: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 8,
   },
-  
+
   detailTitle: {
     fontSize: 14,
     color: "#64748b",
     fontWeight: "500",
     marginLeft: 8,
   },
-  
+
   detailValueNew: {
     fontSize: 24,
     fontWeight: "700",
     color: "#0f172a",
     marginBottom: 4,
   },
-  
+
   detailSubtext: {
     fontSize: 12,
     color: "#64748b",
   },
-  
+
   // Sun & Moon styles
   sunMoonCard: {
     backgroundColor: "#ffffff",
@@ -750,39 +753,39 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
-  
+
   sunMoonHeader: {
     marginBottom: 16,
   },
-  
+
   sunMoonTitle: {
     fontSize: 18,
     fontWeight: "700",
     color: "#0f172a",
   },
-  
+
   sunMoonContent: {
     flexDirection: "row",
     justifyContent: "space-around",
   },
-  
+
   sunMoonItem: {
     alignItems: "center",
   },
-  
+
   sunMoonLabel: {
     fontSize: 14,
     color: "#64748b",
     marginTop: 8,
     marginBottom: 4,
   },
-  
+
   sunMoonTime: {
     fontSize: 16,
     fontWeight: "600",
     color: "#0f172a",
   },
-  
+
   // Weather maps styles
   weatherMapsSection: {
     backgroundColor: "#ffffff",
@@ -796,34 +799,34 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
-  
+
   mapHeader: {
     marginBottom: 20,
   },
-  
+
   mapTitleRow: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 8,
   },
-  
+
   mapTitle: {
     fontSize: 18,
     fontWeight: "700",
     color: "#0f172a",
     marginLeft: 8,
   },
-  
+
   mapSubtitle: {
     fontSize: 14,
     color: "#64748b",
   },
-  
+
   layerSelector: {
     paddingHorizontal: 4,
     marginBottom: 16,
   },
-  
+
   layerButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -838,30 +841,30 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
-  
+
   layerButtonText: {
     fontSize: 14,
     fontWeight: "600",
     color: "#64748b",
     marginLeft: 6,
   },
-  
+
   mapContainer: {
     height: 300,
     borderRadius: 12,
     overflow: "hidden",
   },
-  
+
   mapGradient: {
     flex: 1,
     position: "relative",
   },
-  
+
   mapOverlay: {
     flex: 1,
     position: "relative",
   },
-  
+
   mapRegionLabel: {
     position: "absolute",
     top: 16,
@@ -874,12 +877,12 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#0f172a",
   },
-  
+
   mapPoint: {
     position: "absolute",
     alignItems: "center",
   },
-  
+
   mapPointDot: {
     width: 12,
     height: 12,
@@ -893,7 +896,7 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 3,
   },
-  
+
   mapPointLabel: {
     backgroundColor: "rgba(255, 255, 255, 0.95)",
     paddingHorizontal: 8,
@@ -907,13 +910,13 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
-  
+
   mapPointText: {
     fontSize: 12,
     fontWeight: "600",
     color: "#0f172a",
   },
-  
+
   mapPointValue: {
     fontSize: 11,
     color: "#64748b",
