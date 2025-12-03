@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { CloudSun, MapPin, MessageSquare, Bell } from "lucide-react-native";
+import { CloudSun, MapPin, MessageSquare, Bell, ScanLine } from "lucide-react-native";
 import React from "react";
 import { useTheme } from "@/providers/theme-provider";
 
@@ -45,25 +45,20 @@ export default function FarmerLayout() {
         }}
       />
       <Tabs.Screen
-        name="alerts"
+        name="disease-detection"
         options={{
-          title: "Alerts",
-          tabBarIcon: ({ color, size }) => <Bell size={size} color={color} />,
+          title: "Scan Crop",
+          tabBarIcon: ({ color, size }) => <ScanLine size={size} color={color} />,
         }}
       />
-      <Tabs.Screen
-        name="chatbot"
-        options={{
-          title: "Assistant",
-          tabBarIcon: ({ color, size }) => <MessageSquare size={size} color={color} />,
-        }}
-      />
-      {/* Hidden screens that are part of the stack but not tabs */}
+      
+      {/* Hidden screens */}
+      <Tabs.Screen name="alerts" options={{ href: null }} />
+      <Tabs.Screen name="chatbot" options={{ href: null }} />
       <Tabs.Screen name="groundwater" options={{ href: null }} />
       <Tabs.Screen name="soil-report" options={{ href: null }} />
       <Tabs.Screen name="crop-recommendation" options={{ href: null }} />
       <Tabs.Screen name="irrigation" options={{ href: null }} />
-      <Tabs.Screen name="disease-detection" options={{ href: null }} />
       <Tabs.Screen name="schemes" options={{ href: null }} />
     </Tabs>
   );

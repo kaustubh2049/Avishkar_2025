@@ -18,6 +18,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Location from 'expo-location';
+import { fetchWeather, WeatherData } from "@/services/weather-service";
 
 const { width } = Dimensions.get("window");
 
@@ -39,6 +40,13 @@ function MapScreenContent() {
   const [isBottomSheetExpanded, setIsBottomSheetExpanded] = useState<boolean>(false);
   const [locationName, setLocationName] = useState<string>("Locating...");
   const insets = useSafeAreaInsets();
+  const [weather, setWeather] = useState<WeatherData | null>(null);
+
+  useEffect(() => {
+    if (userLocation) {
+      fetchWeather(userLocation.latitude, userLocation.longitude).then(setWeather);
+    }
+  }, [userLocation]);
 
   useEffect(() => {
     if (userLocation) {
@@ -100,6 +108,7 @@ function MapScreenContent() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
+      {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Text style={styles.greetingText}>{getGreeting()},</Text>
@@ -127,17 +136,29 @@ function MapScreenContent() {
         </View>
         
         <View style={styles.headerRight}>
-          <TouchableOpacity style={styles.iconButton}>
+          <TouchableOpacity 
+            style={styles.iconButton}
+            onPress={() => router.push("/farmer/alerts")}
+          >
             <Bell size={22} color="#64748b" />
             <View style={styles.notificationBadge} />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.iconButton}
+            onPress={requestLocationPermission}
+            disabled={isLoadingLocation}
+          >
+            {isLoadingLocation ? (
+              <ActivityIndicator size={20} color="#0891b2" />
+            ) : (
+              <RefreshCw size={20} color="#0891b2" />
+            )}
           </TouchableOpacity>
           <TouchableOpacity style={styles.iconButton} onPress={handleLogout}>
             <LogOut size={22} color="#64748b" />
           </TouchableOpacity>
         </View>
       </View>
-
-      {/* Summary Cards ScrollView */}
       <View style={styles.summaryContainer}>
         <ScrollView 
           horizontal 
@@ -154,11 +175,11 @@ function MapScreenContent() {
             ["#3b82f6", "#2563eb"]
           )}
 
-          {/* Weather Card (Mock for now) */}
+          {/* Weather Card */}
           {renderSummaryCard(
             "Weather",
-            "32°C",
-            "Sunny • High Humidity",
+            weather ? `${weather.current.temp}°C` : "--",
+            weather ? `${weather.current.condition} • ${weather.current.humidity}% Hum` : "Loading...",
             <CloudRain size={20} color="#fff" />,
             "#f59e0b",
             ["#f59e0b", "#d97706"]

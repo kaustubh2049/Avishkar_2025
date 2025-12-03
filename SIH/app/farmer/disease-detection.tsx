@@ -6,19 +6,35 @@ import { Camera, Upload, AlertTriangle, CheckCircle } from "lucide-react-native"
 
 export default function DiseaseDetectionScreen() {
   const [result, setResult] = useState<null | any>(null);
+  const [analyzing, setAnalyzing] = useState(false);
 
   const handleScan = () => {
-    // Simulate a scan result
-    setResult({
-      disease: "Leaf Blight",
-      severity: "Moderate",
-      cure: "Apply Mancozeb 75 WP @ 2g/liter of water.",
-    });
+    setAnalyzing(true);
+    // Simulate a scan result after delay
+    setTimeout(() => {
+      setResult({
+        disease: "Early Blight",
+        severity: "High",
+        confidence: "94%",
+        causes: [
+          "Fungal infection (Alternaria solani)",
+          "Warm temperatures (24-29°C)",
+          "High humidity or frequent rainfall"
+        ],
+        remedies: [
+          "Apply fungicides containing Mancozeb or Chlorothalonil.",
+          "Improve air circulation by spacing plants properly.",
+          "Remove and destroy infected leaves immediately.",
+          "Use drip irrigation to keep foliage dry."
+        ]
+      });
+      setAnalyzing(false);
+    }, 2000);
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <Stack.Screen options={{ headerTitle: "Disease Detection", headerBackTitle: "Home" }} />
+      <Stack.Screen options={{ headerTitle: "Scan Crop", headerBackTitle: "Home" }} />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         
         {/* Upload Area */}
@@ -30,11 +46,11 @@ export default function DiseaseDetectionScreen() {
           <Text style={styles.uploadSubtitle}>Ensure the affected leaf is clearly visible</Text>
           
           <View style={styles.buttonRow}>
-            <TouchableOpacity style={styles.actionButton} onPress={handleScan}>
+            <TouchableOpacity style={styles.actionButton} onPress={handleScan} disabled={analyzing}>
               <Camera size={20} color="#fff" />
-              <Text style={styles.buttonText}>Camera</Text>
+              <Text style={styles.buttonText}>{analyzing ? "Analyzing..." : "Camera"}</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.actionButton, styles.secondaryButton]} onPress={handleScan}>
+            <TouchableOpacity style={[styles.actionButton, styles.secondaryButton]} onPress={handleScan} disabled={analyzing}>
               <Upload size={20} color="#0ea5e9" />
               <Text style={[styles.buttonText, styles.secondaryButtonText]}>Gallery</Text>
             </TouchableOpacity>
@@ -42,27 +58,53 @@ export default function DiseaseDetectionScreen() {
         </View>
 
         {/* Result Section */}
-        {result && (
+        {result && !analyzing && (
           <View style={styles.resultContainer}>
-            <Text style={styles.sectionTitle}>Analysis Result</Text>
+            <Text style={styles.sectionTitle}>Analysis Report</Text>
             
             <View style={styles.resultCard}>
+              {/* Header: Disease Name & Severity */}
               <View style={styles.resultHeader}>
-                <AlertTriangle size={24} color="#dc2626" />
-                <Text style={styles.diseaseName}>{result.disease}</Text>
-              </View>
-              
-              <View style={styles.severityBadge}>
-                <Text style={styles.severityText}>Severity: {result.severity}</Text>
+                <View style={styles.headerLeft}>
+                  <Text style={styles.label}>Detected Disease</Text>
+                  <Text style={styles.diseaseName}>{result.disease}</Text>
+                </View>
+                <View style={[styles.severityBadge, result.severity === 'High' ? styles.bgRed : styles.bgYellow]}>
+                  <AlertTriangle size={14} color={result.severity === 'High' ? "#991b1b" : "#854d0e"} />
+                  <Text style={[styles.severityText, result.severity === 'High' ? styles.textRed : styles.textYellow]}>
+                    {result.severity} Severity
+                  </Text>
+                </View>
               </View>
 
               <View style={styles.divider} />
 
-              <Text style={styles.cureTitle}>Recommended Cure:</Text>
-              <Text style={styles.cureText}>{result.cure}</Text>
+              {/* Possible Causes */}
+              <View style={styles.section}>
+                <Text style={styles.subTitle}>Possible Causes</Text>
+                {result.causes.map((cause: string, index: number) => (
+                  <View key={index} style={styles.listItem}>
+                    <View style={styles.bullet} />
+                    <Text style={styles.listText}>{cause}</Text>
+                  </View>
+                ))}
+              </View>
+
+              <View style={styles.divider} />
+
+              {/* Recommended Treatment */}
+              <View style={styles.section}>
+                <Text style={styles.subTitle}>Recommended Treatment</Text>
+                {result.remedies.map((remedy: string, index: number) => (
+                  <View key={index} style={styles.listItem}>
+                    <CheckCircle size={16} color="#16a34a" style={{ marginTop: 2 }} />
+                    <Text style={styles.listText}>{remedy}</Text>
+                  </View>
+                ))}
+              </View>
 
               <TouchableOpacity style={styles.buyButton}>
-                <Text style={styles.buyButtonText}>Find Medicine Nearby</Text>
+                <Text style={styles.buyButtonText}>Find Remedies Nearby</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -155,53 +197,84 @@ const styles = StyleSheet.create({
   },
   resultHeader: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    marginBottom: 12,
-  },
-  diseaseName: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#dc2626",
-  },
-  severityBadge: {
-    backgroundColor: "#fee2e2",
-    alignSelf: "flex-start",
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 8,
+    justifyContent: "space-between",
+    alignItems: "flex-start",
     marginBottom: 16,
   },
-  severityText: {
-    color: "#991b1b",
+  headerLeft: {
+    flex: 1,
+  },
+  label: {
     fontSize: 12,
+    color: "#64748b",
+    marginBottom: 4,
+    textTransform: "uppercase",
     fontWeight: "600",
+  },
+  diseaseName: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#0f172a",
+  },
+  severityBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 6,
+  },
+  bgRed: { backgroundColor: "#fee2e2" },
+  bgYellow: { backgroundColor: "#fef9c3" },
+  textRed: { color: "#991b1b" },
+  textYellow: { color: "#854d0e" },
+  severityText: {
+    fontSize: 12,
+    fontWeight: "700",
   },
   divider: {
     height: 1,
-    backgroundColor: "#f1f5f9",
+    backgroundColor: "#e2e8f0",
+    marginVertical: 16,
+  },
+  section: {
     marginBottom: 16,
   },
-  cureTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#0f172a",
-    marginBottom: 4,
+  subTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#334155",
+    marginBottom: 12,
   },
-  cureText: {
+  listItem: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 8,
+    gap: 10,
+  },
+  bullet: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#94a3b8",
+    marginTop: 8,
+  },
+  listText: {
+    flex: 1,
     fontSize: 14,
     color: "#475569",
     lineHeight: 22,
-    marginBottom: 20,
   },
   buyButton: {
-    backgroundColor: "#0f172a",
-    paddingVertical: 12,
+    backgroundColor: "#0ea5e9",
+    paddingVertical: 14,
     borderRadius: 12,
     alignItems: "center",
+    marginTop: 8,
   },
   buyButtonText: {
     color: "#fff",
-    fontWeight: "600",
+    fontWeight: "700",
+    fontSize: 16,
   },
 });

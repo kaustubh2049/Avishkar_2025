@@ -7,11 +7,13 @@ interface StationMapProps {
   stations: Station[];
   userLocation?: LocationData | null;
   onStationPress: (station: Station) => void;
+  activeLayer?: "groundwater" | "temperature" | "soil" | "crop";
 }
 
-export function StationMap({ stations, userLocation, onStationPress }: StationMapProps) {
+export function StationMap({ stations, userLocation, onStationPress, activeLayer = "groundwater" }: StationMapProps) {
   const { height } = Dimensions.get("window");
   const webRef = useRef<WebView | null>(null);
+  const accuWeatherKey = process.env.EXPO_PUBLIC_ACCUWEATHER_API_KEY || "";
 
   const html = useMemo(() => {
     const initialCenter = {
@@ -35,6 +37,8 @@ export function StationMap({ stations, userLocation, onStationPress }: StationMa
         temperature: s.temperature,
         week: s.week,
       })),
+      activeLayer,
+      accuWeatherKey
     };
 
     const dataScript = `window.__MAP_DATA__ = ${JSON.stringify(payload)};`;
@@ -54,16 +58,63 @@ export function StationMap({ stations, userLocation, onStationPress }: StationMa
 </head>
 <body>
 <div id="map"></div>
-<script ${''}src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 <script>
 ${dataScript}
 const RN = window.ReactNativeWebView;
 const data = window.__MAP_DATA__;
 const map = L.map('map').setView([data.initialCenter.lat, data.initialCenter.lng], data.initialCenter.zoom);
+
+// Base Layer (OSM)
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 19,
   attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
+
+// Layers
+let activeOverlay = null;
+
+function updateLayer(layerName) {
+  if (activeOverlay) {
+    map.removeLayer(activeOverlay);
+    activeOverlay = null;
+  }
+
+  if (layerName === 'temperature') {
+    // Temperature Heatmap
+    const heatPoints = data.stations
+      .filter(s => s.temperature != null)
+      .map(s => [s.lat, s.lng, s.temperature]); // [lat, lng, intensity]
+
+    if (heatPoints.length > 0) {
+      activeOverlay = L.heatLayer(heatPoints, {
+        radius: 25,
+        blur: 15,
+        maxZoom: 10,
+        max: 40, // Assumed max temp for scaling intensity
+        gradient: {
+          0.4: 'blue',
+          0.6: 'cyan',
+          0.7: 'lime',
+          0.8: 'yellow',
+          1.0: 'red'
+        }
+      }).addTo(map);
+    }
+  } else if (layerName === 'rainfall' && data.accuWeatherKey) {
+    // AccuWeather Radar
+    activeOverlay = L.tileLayer(
+      'https://api.accuweather.com/maps/v1/radar/{z}/{x}/{y}.png?apikey=' + data.accuWeatherKey, 
+      {
+        opacity: 0.6,
+        attribution: 'Weather &copy; AccuWeather'
+      }
+    ).addTo(map);
+  }
+}
+
+updateLayer(data.activeLayer);
 
 function stationPopupHtml(s) {
   var parts = [];
@@ -110,7 +161,7 @@ setTimeout(notifyBounds, 0);
 </script>
 </body>
 </html>`;
-  }, [stations, userLocation]);
+  }, [stations, userLocation, activeLayer]);
 
   const handleMessage = (e: WebViewMessageEvent) => {
     try {
