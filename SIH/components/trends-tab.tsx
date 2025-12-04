@@ -1,6 +1,10 @@
-import { Station } from "@/providers/stations-provider";
+import {
+  DatabaseReading,
+  Station,
+  useStations,
+} from "@/providers/stations-provider";
 import { TrendingDown, TrendingUp } from "lucide-react-native";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 interface TrendsTabProps {
@@ -8,34 +12,108 @@ interface TrendsTabProps {
 }
 
 export function TrendsTab({ station }: TrendsTabProps) {
-  const calculateTrend = (days: number) => {
-    if (station.recentReadings.length < 2)
-      return { value: 0, direction: "stable" as const };
+  const { getStationReadings } = useStations();
+  const [readings6m, setReadings6m] = useState<DatabaseReading[]>([]);
+  const [readings1y, setReadings1y] = useState<DatabaseReading[]>([]);
+  const [readings2y, setReadings2y] = useState<DatabaseReading[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-    const recent = station.recentReadings.slice(-days);
-    const first = recent[0]?.level || 0;
-    const last = recent[recent.length - 1]?.level || 0;
-    const change = last - first;
+  // Fetch readings for all timeframes
+  useEffect(() => {
+    const fetchAllReadings = async () => {
+      try {
+        setIsLoading(true);
+        const [data6m, data1y, data2y] = await Promise.all([
+          getStationReadings(station.latitude, station.longitude, "6m"),
+          getStationReadings(station.latitude, station.longitude, "1y"),
+          getStationReadings(station.latitude, station.longitude, "2y"),
+        ]);
+
+        setReadings6m(data6m);
+        setReadings1y(data1y);
+        setReadings2y(data2y);
+      } catch (error) {
+        console.error("Error fetching trend data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAllReadings();
+  }, [station.latitude, station.longitude, getStationReadings]);
+
+  const calculateTrendFromReadings = (readings: DatabaseReading[]) => {
+    if (readings.length < 2) {
+      return {
+        value: 0,
+        direction: "stable" as const,
+        description: "Insufficient data",
+      };
+    }
+
+    // Sort by P_no (ascending = latest to oldest)
+    const sortedReadings = [...readings].sort((a, b) => a.P_no - b.P_no);
+    const latest = sortedReadings[0]; // Lowest P_no = latest
+    const oldest = sortedReadings[sortedReadings.length - 1]; // Highest P_no = oldest
+
+    const change = latest.Water_Level - oldest.Water_Level;
+    const threshold = 0.1; // 10cm threshold for stability
+
+    let direction: "rising" | "falling" | "stable";
+    let description: string;
+
+    if (change > threshold) {
+      direction = "rising";
+      description = `Water level increased by ${change.toFixed(2)}m`;
+    } else if (change < -threshold) {
+      direction = "falling";
+      description = `Water level decreased by ${Math.abs(change).toFixed(2)}m`;
+    } else {
+      direction = "stable";
+      description = "Water level remains stable";
+    }
 
     return {
       value: Math.abs(change),
-      direction:
-        change > 0.1
-          ? ("rising" as const)
-          : change < -0.1
-          ? ("falling" as const)
-          : ("stable" as const),
+      direction,
+      description,
     };
   };
 
-  const weeklyTrend =
-    station.recentReadings.length >= 2
-      ? calculateTrend(7)
-      : { value: 0, direction: "stable" as const };
-  const monthlyTrend =
-    station.recentReadings.length >= 2
-      ? calculateTrend(30)
-      : { value: 0, direction: "stable" as const };
+  const calculateStatistics = (readings: DatabaseReading[]) => {
+    if (readings.length === 0) {
+      return {
+        min: 0,
+        max: 0,
+        average: 0,
+        variability: 0,
+      };
+    }
+
+    const levels = readings.map((r) => r.Water_Level);
+    const min = Math.min(...levels);
+    const max = Math.max(...levels);
+    const average =
+      levels.reduce((sum, level) => sum + level, 0) / levels.length;
+    const variability = max - min;
+
+    return { min, max, average, variability };
+  };
+
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.loadingText}>Loading trend analysis...</Text>
+      </View>
+    );
+  }
+
+  const trend6m = calculateTrendFromReadings(readings6m);
+  const trend1y = calculateTrendFromReadings(readings1y);
+  const trend2y = calculateTrendFromReadings(readings2y);
+  const stats6m = calculateStatistics(readings6m);
+  const stats1y = calculateStatistics(readings1y);
+  const stats2y = calculateStatistics(readings2y);
 
   const getTrendIcon = (direction: string) => {
     switch (direction) {
@@ -62,50 +140,65 @@ export function TrendsTab({ station }: TrendsTabProps) {
   return (
     <View style={styles.container}>
       <View style={styles.trendCard}>
-        <Text style={styles.cardTitle}>7-Day Trend</Text>
+        <Text style={styles.cardTitle}>6-Month Trend</Text>
         <View style={styles.trendRow}>
-          {getTrendIcon(weeklyTrend.direction)}
+          {getTrendIcon(trend6m.direction)}
           <Text
             style={[
               styles.trendValue,
-              { color: getTrendColor(weeklyTrend.direction) },
+              { color: getTrendColor(trend6m.direction) },
             ]}
           >
-            {weeklyTrend.direction === "stable"
+            {trend6m.direction === "stable"
               ? "Stable"
-              : `${weeklyTrend.value.toFixed(2)}m ${weeklyTrend.direction}`}
+              : `${trend6m.value.toFixed(2)}m ${trend6m.direction}`}
           </Text>
         </View>
-        <Text style={styles.trendDescription}>
-          {weeklyTrend.direction === "rising"
-            ? "Water level is rising, indicating possible recharge"
-            : weeklyTrend.direction === "falling"
-            ? "Water level is declining, monitor closely"
-            : "Water level remains stable"}
+        <Text style={styles.trendDescription}>{trend6m.description}</Text>
+        <Text style={styles.dataCount}>
+          Based on {readings6m.length} readings
         </Text>
       </View>
 
       <View style={styles.trendCard}>
-        <Text style={styles.cardTitle}>30-Day Trend</Text>
+        <Text style={styles.cardTitle}>1-Year Trend</Text>
         <View style={styles.trendRow}>
-          {getTrendIcon(monthlyTrend.direction)}
+          {getTrendIcon(trend1y.direction)}
           <Text
             style={[
               styles.trendValue,
-              { color: getTrendColor(monthlyTrend.direction) },
+              { color: getTrendColor(trend1y.direction) },
             ]}
           >
-            {monthlyTrend.direction === "stable"
+            {trend1y.direction === "stable"
               ? "Stable"
-              : `${monthlyTrend.value.toFixed(2)}m ${monthlyTrend.direction}`}
+              : `${trend1y.value.toFixed(2)}m ${trend1y.direction}`}
           </Text>
         </View>
-        <Text style={styles.trendDescription}>
-          {monthlyTrend.direction === "rising"
-            ? "Long-term recovery trend observed"
-            : monthlyTrend.direction === "falling"
-            ? "Long-term decline requires attention"
-            : "Long-term stability maintained"}
+        <Text style={styles.trendDescription}>{trend1y.description}</Text>
+        <Text style={styles.dataCount}>
+          Based on {readings1y.length} readings
+        </Text>
+      </View>
+
+      <View style={styles.trendCard}>
+        <Text style={styles.cardTitle}>2-Year Trend</Text>
+        <View style={styles.trendRow}>
+          {getTrendIcon(trend2y.direction)}
+          <Text
+            style={[
+              styles.trendValue,
+              { color: getTrendColor(trend2y.direction) },
+            ]}
+          >
+            {trend2y.direction === "stable"
+              ? "Stable"
+              : `${trend2y.value.toFixed(2)}m ${trend2y.direction}`}
+          </Text>
+        </View>
+        <Text style={styles.trendDescription}>{trend2y.description}</Text>
+        <Text style={styles.dataCount}>
+          Based on {readings2y.length} readings
         </Text>
       </View>
 
@@ -113,47 +206,53 @@ export function TrendsTab({ station }: TrendsTabProps) {
         <View style={styles.statItem}>
           <Text style={styles.statLabel}>Min Level (6m)</Text>
           <Text style={styles.statValue}>
-            {station.recentReadings.length > 0
-              ? Math.min(...station.recentReadings.map((r) => r.level)).toFixed(
-                  2
-                )
-              : "-"}
-            m
+            {stats6m.min > 0 ? stats6m.min.toFixed(2) : "-"}m
           </Text>
         </View>
         <View style={styles.statItem}>
           <Text style={styles.statLabel}>Max Level (6m)</Text>
           <Text style={styles.statValue}>
-            {station.recentReadings.length > 0
-              ? Math.max(...station.recentReadings.map((r) => r.level)).toFixed(
-                  2
-                )
-              : "-"}
-            m
+            {stats6m.max > 0 ? stats6m.max.toFixed(2) : "-"}m
           </Text>
         </View>
         <View style={styles.statItem}>
-          <Text style={styles.statLabel}>Average Level</Text>
+          <Text style={styles.statLabel}>Average Level (6m)</Text>
           <Text style={styles.statValue}>
-            {station.recentReadings.length > 0
-              ? (
-                  station.recentReadings.reduce((sum, r) => sum + r.level, 0) /
-                  station.recentReadings.length
-                ).toFixed(2)
-              : "-"}
-            m
+            {stats6m.average > 0 ? stats6m.average.toFixed(2) : "-"}m
           </Text>
         </View>
         <View style={styles.statItem}>
-          <Text style={styles.statLabel}>Variability</Text>
+          <Text style={styles.statLabel}>Variability (6m)</Text>
           <Text style={styles.statValue}>
-            {station.recentReadings.length > 1
-              ? (
-                  Math.max(...station.recentReadings.map((r) => r.level)) -
-                  Math.min(...station.recentReadings.map((r) => r.level))
-                ).toFixed(2)
-              : "-"}
-            m
+            {stats6m.variability > 0 ? stats6m.variability.toFixed(2) : "-"}m
+          </Text>
+        </View>
+      </View>
+
+      {/* 1-Year Statistics */}
+      <View style={styles.statsGrid}>
+        <View style={styles.statItem}>
+          <Text style={styles.statLabel}>Min Level (1y)</Text>
+          <Text style={styles.statValue}>
+            {stats1y.min > 0 ? stats1y.min.toFixed(2) : "-"}m
+          </Text>
+        </View>
+        <View style={styles.statItem}>
+          <Text style={styles.statLabel}>Max Level (1y)</Text>
+          <Text style={styles.statValue}>
+            {stats1y.max > 0 ? stats1y.max.toFixed(2) : "-"}m
+          </Text>
+        </View>
+        <View style={styles.statItem}>
+          <Text style={styles.statLabel}>Average Level (1y)</Text>
+          <Text style={styles.statValue}>
+            {stats1y.average > 0 ? stats1y.average.toFixed(2) : "-"}m
+          </Text>
+        </View>
+        <View style={styles.statItem}>
+          <Text style={styles.statLabel}>Variability (1y)</Text>
+          <Text style={styles.statValue}>
+            {stats1y.variability > 0 ? stats1y.variability.toFixed(2) : "-"}m
           </Text>
         </View>
       </View>
@@ -164,6 +263,18 @@ export function TrendsTab({ station }: TrendsTabProps) {
 const styles = StyleSheet.create({
   container: {
     gap: 16,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: "#64748b",
+    textAlign: "center",
+    padding: 20,
+  },
+  dataCount: {
+    fontSize: 12,
+    color: "#94a3b8",
+    marginTop: 4,
+    fontStyle: "italic",
   },
   trendCard: {
     backgroundColor: "#f8fafc",
