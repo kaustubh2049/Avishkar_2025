@@ -71,22 +71,32 @@ function MapScreenContent() {
 
   
 
-  const renderSummaryCard = (title: string, value: string, subtext: string, icon: any, color: string, bgColors: readonly [string, string, ...string[]]) => (
-    <LinearGradient
-      colors={bgColors}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={styles.summaryCard}
-    >
-      <View style={styles.summaryCardHeader}>
-        <View style={[styles.iconContainer, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
-          {icon}
+  const renderSummaryCard = (
+    title: string,
+    value: string,
+    subtext: string,
+    icon: any,
+    color: string,
+    bgColors: readonly [string, string, ...string[]],
+    onPress?: () => void,
+  ) => (
+    <TouchableOpacity activeOpacity={onPress ? 0.8 : 1} onPress={onPress}>
+      <LinearGradient
+        colors={bgColors}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.summaryCard}
+      >
+        <View style={styles.summaryCardHeader}>
+          <View style={styles.iconContainer}>
+            {icon}
+          </View>
+          <Text style={styles.summaryCardTitle}>{title}</Text>
         </View>
-        <Text style={styles.summaryCardTitle}>{title}</Text>
-      </View>
-      <Text style={styles.summaryCardValue}>{value}</Text>
-      <Text style={styles.summaryCardSubtext}>{subtext}</Text>
-    </LinearGradient>
+        <Text style={styles.summaryCardValue}>{value}</Text>
+        <Text style={styles.summaryCardSubtext}>{subtext}</Text>
+      </LinearGradient>
+    </TouchableOpacity>
   );
 
   return (
@@ -126,7 +136,8 @@ function MapScreenContent() {
             "Nitrogen: Optimal",
             <Leaf size={20} color="#fff" />,
             "#22c55e",
-            ["#22c55e", "#16a34a"]
+            ["#22c55e", "#16a34a"],
+            () => router.push("/farmer/soil-report")
           )}
         </ScrollView>
       </View>

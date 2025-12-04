@@ -1,0 +1,11 @@
+Row_Index,District,Region,Latitude,Longitude,N,P,K,pH,Rainfall,Fertility_Score,Actual_Crop,Predicted_Crop,Match
+0,Achalpur,Vidarbha,21.27405,77.56868,47,28,65,7.1,1013,100,Sugarcane,Sugarcane,TRUE
+1,Achalpur,Vidarbha,21.3417,77.53776,65,28,50,7.2,1001,100,Sugarcane,Sugarcane,TRUE
+2,Achalpur,Vidarbha,21.34532,77.53547,46,23,57,7.5,1137,100,Cotton,Cotton,TRUE
+3,Achalpur,Vidarbha,21.31377,77.59593,57,25,59,7.7,882,96.66666666666667,Soybean,Soybean,TRUE
+4,Achalpur,Vidarbha,21.28582,77.5647,55,28,52,7.3,927,100,Sugarcane,Sugarcane,TRUE
+5,Achalpur,Vidarbha,21.29274,77.508,53,23,43,7.5,926,100,Cotton,Cotton,TRUE
+6,Achalpur,Vidarbha,21.3512,77.52693,57,23,42,7.3,934,100,Sugarcane,Sugarcane,TRUE
+7,Achalpur,Vidarbha,21.31532,77.58263,75,33,57,7.4,863,100,Soybean,Soybean,TRUE
+8,Achalpur,Vidarbha,21.25596,77.5249,67,27,57,6.9,1044,100,Sugarcane,Sugarcane,TRUE
+9,Achalpur,Vidarbha,21.29713,77.60927,52,22,56,7.5,860,100,Soybean,Soybean,TRUE

@@ -1,0 +1,2 @@
+User_Latitude,User_Longitude,User_District,User_Region,Pred_N,Pred_P,Pred_K,Pred_pH,Predicted_Crop,Top2_Crop,Top3_Crop,Nearest_N,Nearest_P,Nearest_K,Nearest_pH,Nearest_Crop
+16.3456,73.4567,sangli,western maharashtra,98.255,19.345,44.02,5.934499999999995,Rice,Cashew,Jowar,105,20,46,5.9,Rice

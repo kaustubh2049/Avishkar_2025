@@ -1,0 +1,7 @@
+User_Latitude,User_Longitude,User_District,User_Region,Pred_N,Pred_P,Pred_K,Pred_pH,Predicted_Crop,Top2_Crop,Top3_Crop,Nearest_N,Nearest_P,Nearest_K,Nearest_pH,Nearest_Crop
+45.8978,22.5678,Achalpur,Vidarbha,95.92,25.365,41.275,6.0745000000000084,Rice,Soybean,Sugarcane,62,35,49,7.5,Cotton
+54.789,27.879,Achalpur,Vidarbha,95.92,25.365,41.275,6.0745000000000084,Rice,Soybean,Sugarcane,55,34,48,7.5,Cotton
+69.6989,31.5438,Chandrapur,Vidarbha,95.92,23.4,41.275,6.0745000000000084,Rice,Soybean,Sugarcane,55,34,48,7.5,Cotton
+97.9898,24.5678,Alibag,konkan,95.92,22.27,41.275,6.0745000000000084,Rice,Soybean,Cashew,71,26,63,8.1,Bajra
+42.909,24.5679,Aurangabad,Marathwada,95.92,21.8,41.275,6.0745000000000084,Rice,Soybean,Jowar,27,26,68,7.5,Bajra
+32.5678,12.678,Hingoli,Marathwada,95.895,21.545,41.275,6.073500000000008,Rice,Soybean,Jowar,27,26,68,7.5,Bajra

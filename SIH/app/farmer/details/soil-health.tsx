@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   View,
   Text,
@@ -8,7 +8,7 @@ import {
   Dimensions,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import {
   ChevronLeft,
   Leaf,
@@ -21,38 +21,88 @@ import { FarmerHeader, AiFab } from "@/components/FarmerHeader";
 
 const SoilHealthDetails = () => {
   const router = useRouter();
+  const params = useLocalSearchParams();
 
-  // Mock soil data
-  const soilData = {
-    score: 68,
-    status: "Good",
-    nutrients: [
-      {
-        name: "Nitrogen (N)",
-        value: 20,
-        status: "Low",
-        range: "10-40 ppm",
-      },
-      {
-        name: "Phosphorus (P)",
-        value: 45,
-        status: "Adequate",
-        range: "30-50 ppm",
-      },
-      { name: "Potassium (K)", value: 85, status: "High", range: "40-80 ppm" },
-      {
-        name: "pH",
-        value: 6.5,
-        status: "Optimal",
-        range: "6.0-7.5",
-      },
-    ],
-    recommendations: [
-      "Apply zinc sulfate at 25 kg/ha during next sowing",
-      "Include leguminous crops in rotation to maintain nitrogen levels",
-      "Apply organic compost to improve soil structure",
-    ],
-  };
+  // Build soil data from model result if passed, otherwise fall back to mock data
+  const soilData = useMemo(() => {
+    try {
+      if (params.soilResult && typeof params.soilResult === "string") {
+        const parsed = JSON.parse(params.soilResult as string);
+        const score = parsed.score ?? 68;
+        const status = score >= 80 ? "Excellent" : score >= 60 ? "Good" : "Needs Attention";
+
+        const nutrients = [
+          {
+            name: "Nitrogen (N)",
+            value: Math.min(100, Math.max(0, parsed.N ?? 0)),
+            status: parsed.statuses?.N ?? "Unknown",
+            range: "10-40 ppm",
+          },
+          {
+            name: "Phosphorus (P)",
+            value: Math.min(100, Math.max(0, parsed.P ?? 0)),
+            status: parsed.statuses?.P ?? "Unknown",
+            range: "30-50 ppm",
+          },
+          {
+            name: "Potassium (K)",
+            value: Math.min(100, Math.max(0, parsed.K ?? 0)),
+            status: parsed.statuses?.K ?? "Unknown",
+            range: "40-80 ppm",
+          },
+          {
+            name: "pH",
+            value: Math.min(100, Math.max(0, (parsed.pH ?? 7) * 10)),
+            status: parsed.statuses?.pH ?? "Unknown",
+            range: "6.0-7.5",
+          },
+        ];
+
+        const recommendations: string[] = Array.isArray(parsed.recommendations)
+          ? parsed.recommendations
+          : [
+              "Maintain balanced fertilizer use based on N, P, K status.",
+              "Add organic compost regularly to improve soil structure.",
+            ];
+
+        return { score, status, nutrients, recommendations };
+      }
+    } catch {
+      // Fallback to mock data below
+    }
+
+    // Mock soil data (fallback when no model result passed)
+    return {
+      score: 68,
+      status: "Good",
+      nutrients: [
+        {
+          name: "Nitrogen (N)",
+          value: 20,
+          status: "Low",
+          range: "10-40 ppm",
+        },
+        {
+          name: "Phosphorus (P)",
+          value: 45,
+          status: "Adequate",
+          range: "30-50 ppm",
+        },
+        { name: "Potassium (K)", value: 85, status: "High", range: "40-80 ppm" },
+        {
+          name: "pH",
+          value: 6.5,
+          status: "Optimal",
+          range: "6.0-7.5",
+        },
+      ],
+      recommendations: [
+        "Apply zinc sulfate at 25 kg/ha during next sowing",
+        "Include leguminous crops in rotation to maintain nitrogen levels",
+        "Apply organic compost to improve soil structure",
+      ],
+    };
+  }, [params.soilResult]);
 
   return (
     <View style={styles.container}>
