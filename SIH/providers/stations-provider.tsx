@@ -4,6 +4,15 @@ import * as Location from "expo-location";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Platform } from "react-native";
 
+export interface DatabaseReading {
+  P_no: number;
+  WLCODE: string;
+  SITE_TYPE: string;
+  LAT: number;
+  LON: number;
+  Water_Level: number;
+}
+
 export interface Station {
   id: string;
   name: string;
@@ -408,26 +417,75 @@ export const [StationsProvider, useStations] = createContextHook(() => {
 
   // Fetch stations from Supabase using st_map_data table
   const fetchStations = useCallback(async () => {
+    console.log("fetchStations called - attempting to fetch from st_map_data");
+
+    // Check if supabase is configured
+    console.log("Supabase client available:", !!supabase);
+
     try {
       setIsLoadingStations(true);
       setStationsError(null);
 
+      // Test basic connection first
+      console.log("Testing Supabase connection...");
+      const { data: testData, error: testError } = await supabase
+        .from("st_map_data")
+        .select("count", { count: "exact", head: true });
+
+      if (testError) {
+        console.log("Connection test failed:", testError);
+        throw testError;
+      }
+
+      console.log("Connection successful, total rows:", testData);
+
       // Fetch station data from st_map_data table
+      console.log("Fetching actual data...");
       const { data: stationData, error: stationErr } = await supabase
         .from("st_map_data")
-        .select("*")
+        .select(
+          "st_code, Area_Name, Latitude, Longitude, water_level, full_address_generated"
+        )
         .order("st_code", { ascending: true });
 
-      if (stationErr) throw stationErr;
+      if (stationErr) {
+        console.log("Fetch error:", stationErr);
+        throw stationErr;
+      }
+
+      console.log("Raw st_map_data from Supabase:", stationData);
+      console.log("Number of rows fetched:", stationData?.length || 0);
+      console.log("First row example:", stationData?.[0]);
 
       // Map st_map_data rows to Station objects (each station is unique by st_code)
       const mappedFromStationData: Station[] = (stationData ?? [])
-        .filter((row: any) => row.st_code && row.latitude && row.longitude)
+        .filter((row: any) => {
+          console.log("Checking row:", {
+            st_code: row.st_code,
+            Area_Name: row.Area_Name,
+            Latitude: row.Latitude,
+            Longitude: row.Longitude,
+            water_level: row.water_level,
+          });
+          return (
+            row.st_code &&
+            (row.Latitude || row.Latitude === 0) &&
+            (row.Longitude || row.Longitude === 0)
+          );
+        })
         .map((row: any) => {
-          const lat = Number(row.latitude);
+          const lat = Number(row.Latitude);
           const lon = Number(row.Longitude);
           const level = Number(row.water_level ?? 0);
           const dateStr = new Date().toISOString();
+
+          console.log("Mapping station:", {
+            id: row.st_code,
+            name: row.Area_Name,
+            lat: lat,
+            lon: lon,
+            level: level,
+          });
 
           return {
             id: String(row.st_code),
@@ -475,10 +533,19 @@ export const [StationsProvider, useStations] = createContextHook(() => {
         "mapped(valid):",
         mappedFromStationData.length
       );
-      setStations(mappedFromStationData);
+
+      if (mappedFromStationData.length === 0) {
+        console.log("No valid stations found, using mock data instead");
+        setStations(mockStations.slice(0, 5));
+      } else {
+        setStations(mappedFromStationData);
+      }
     } catch (err: any) {
       console.log("Supabase fetch error:", err);
       setStationsError(err?.message || "Failed to load stations");
+      // Fallback to mock stations if database fails
+      console.log("Falling back to mock stations");
+      setStations(mockStations.slice(0, 5)); // Use first 5 mock stations as fallback
     } finally {
       setIsLoadingStations(false);
     }
@@ -639,6 +706,53 @@ export const [StationsProvider, useStations] = createContextHook(() => {
     [stations]
   );
 
+  // Fetch water level readings for a specific station from district_data table
+  const getStationReadings = useCallback(
+    async (
+      latitude: number,
+      longitude: number,
+      timeframe: "6m" | "1y" | "2y"
+    ): Promise<DatabaseReading[]> => {
+      try {
+        console.log(
+          `Fetching readings for station at ${latitude}, ${longitude} with timeframe ${timeframe}`
+        );
+
+        // Determine how many readings to fetch based on timeframe
+        const readingCounts = {
+          "6m": 12,
+          "1y": 24,
+          "2y": 48,
+        };
+        const limit = readingCounts[timeframe];
+
+        // Query district_data table with tolerance for LAT/LON matching
+        const tolerance = 0.001; // Small tolerance for coordinate matching
+        const { data, error } = await supabase
+          .from("district_data")
+          .select("P_no, WLCODE, SITE_TYPE, LAT, LON, Water_Level")
+          .gte("LAT", latitude - tolerance)
+          .lte("LAT", latitude + tolerance)
+          .gte("LON", longitude - tolerance)
+          .lte("LON", longitude + tolerance)
+          .order("P_no", { ascending: true }) // Lower P_no = latest reading
+          .limit(limit);
+
+        if (error) {
+          console.error("Error fetching station readings:", error);
+          return [];
+        }
+
+        console.log(`Found ${data?.length || 0} readings for station`);
+        return (data as DatabaseReading[]) || [];
+      } catch (err) {
+        console.error("Error in getStationReadings:", err);
+        return [];
+      }
+    },
+    []
+  );
+
   const getAnalytics = useCallback(() => {
     const avgWaterLevel =
       stations.reduce((sum, station) => sum + station.currentLevel, 0) /
@@ -674,6 +788,7 @@ export const [StationsProvider, useStations] = createContextHook(() => {
       isLoadingStations,
       stationsError,
       getStationById,
+      getStationReadings,
       getAnalytics,
       requestLocationPermission,
     }),
@@ -688,6 +803,7 @@ export const [StationsProvider, useStations] = createContextHook(() => {
       isLoadingStations,
       stationsError,
       getStationById,
+      getStationReadings,
       getAnalytics,
       requestLocationPermission,
     ]

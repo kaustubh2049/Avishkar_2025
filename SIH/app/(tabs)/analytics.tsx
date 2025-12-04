@@ -2,7 +2,12 @@ import { AnalyticsCard } from "@/components/analytics-card";
 import { TrendChart } from "@/components/trend-chart";
 import { StationsProvider, useStations } from "@/providers/stations-provider";
 import { useRouter } from "expo-router";
-import { BarChart3, Download, TrendingDown, TrendingUp } from "lucide-react-native";
+import {
+  BarChart3,
+  Download,
+  TrendingDown,
+  TrendingUp,
+} from "lucide-react-native";
 import React, { useState } from "react";
 import {
   ScrollView,
@@ -15,16 +20,17 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 function AnalyticsScreenContent() {
   const { stations, getAnalytics } = useStations();
-  const [selectedTimeframe, setSelectedTimeframe] = useState<"7d" | "30d" | "6M" | "1y">("30d");
+  const [selectedTimeframe, setSelectedTimeframe] = useState<
+    "6m" | "1y" | "2y"
+  >("6m");
   const analytics = getAnalytics();
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
   const timeframeOptions = [
-    { key: "30d" as const, label: "30 Days" },
-    { key: "6M" as const, label: "6 Months" },
-
+    { key: "6m" as const, label: "6 Months" },
     { key: "1y" as const, label: "1 Year" },
+    { key: "2y" as const, label: "2 Years" },
   ];
 
   return (
@@ -36,7 +42,6 @@ function AnalyticsScreenContent() {
           <Text style={styles.headerSubtitle}>Groundwater insights</Text>
         </View>
         <View style={styles.headerRight}>
-          
           <TouchableOpacity style={styles.headerButton}>
             <Download size={24} color="#64748b" />
           </TouchableOpacity>
@@ -51,14 +56,16 @@ function AnalyticsScreenContent() {
               key={option.key}
               style={[
                 styles.timeframeButton,
-                selectedTimeframe === option.key && styles.timeframeButtonActive,
+                selectedTimeframe === option.key &&
+                  styles.timeframeButtonActive,
               ]}
               onPress={() => setSelectedTimeframe(option.key)}
             >
               <Text
                 style={[
                   styles.timeframeButtonText,
-                  selectedTimeframe === option.key && styles.timeframeButtonTextActive,
+                  selectedTimeframe === option.key &&
+                    styles.timeframeButtonTextActive,
                 ]}
               >
                 {option.label}
@@ -114,7 +121,7 @@ function AnalyticsScreenContent() {
               borderRadius: 32,
               shadowColor: "#1e293b",
               shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.10,
+              shadowOpacity: 0.1,
               shadowRadius: 8,
               elevation: 4,
             }}
@@ -137,7 +144,9 @@ function AnalyticsScreenContent() {
         <View style={styles.chartContainer}>
           <View style={styles.chartHeader}>
             <Text style={styles.chartTitle}>Groundwater Trend</Text>
-            <Text style={styles.chartSubtitle}>Average water level across all stations</Text>
+            <Text style={styles.chartSubtitle}>
+              Average water level across all stations
+            </Text>
           </View>
           <TrendChart timeframe={selectedTimeframe} />
         </View>
@@ -150,9 +159,35 @@ function AnalyticsScreenContent() {
               <View key={region.state} style={styles.regionalCard}>
                 <View style={styles.regionalCardContent}>
                   <Text style={styles.regionalState}>{region.state}</Text>
-                  <Text style={styles.regionalValue}>{region.avgLevel.toFixed(1)}m</Text>
-                  <View style={[styles.regionalStatus, { backgroundColor: region.status === 'critical' ? '#fef2f2' : region.status === 'warning' ? '#fff7ed' : '#f0fdf4' }]}>
-                    <Text style={[styles.regionalStatusText, { color: region.status === 'critical' ? '#dc2626' : region.status === 'warning' ? '#ea580c' : '#059669' }]}>
+                  <Text style={styles.regionalValue}>
+                    {region.avgLevel.toFixed(1)}m
+                  </Text>
+                  <View
+                    style={[
+                      styles.regionalStatus,
+                      {
+                        backgroundColor:
+                          region.status === "critical"
+                            ? "#fef2f2"
+                            : region.status === "warning"
+                            ? "#fff7ed"
+                            : "#f0fdf4",
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.regionalStatusText,
+                        {
+                          color:
+                            region.status === "critical"
+                              ? "#dc2626"
+                              : region.status === "warning"
+                              ? "#ea580c"
+                              : "#059669",
+                        },
+                      ]}
+                    >
                       {region.status.toUpperCase()}
                     </Text>
                   </View>

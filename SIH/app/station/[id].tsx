@@ -7,19 +7,23 @@ import { router, useLocalSearchParams } from "expo-router";
 import { ArrowLeft, Battery, Signal } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 function StationDetailContent() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { getStationById } = useStations();
-  const [selectedTab, setSelectedTab] = useState<"trends" | "recharge" | "metadata">("trends");
-  const [chartTimeframe, setChartTimeframe] = useState<"7d" | "30d" | "1y">("7d");
+  const [selectedTab, setSelectedTab] = useState<
+    "trends" | "recharge" | "metadata"
+  >("trends");
+  const [chartTimeframe, setChartTimeframe] = useState<"6m" | "1y" | "2y">(
+    "6m"
+  );
 
   const station = getStationById(id!);
 
@@ -33,10 +37,14 @@ function StationDetailContent() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "normal": return "#059669";
-      case "warning": return "#ea580c";
-      case "critical": return "#dc2626";
-      default: return "#64748b";
+      case "normal":
+        return "#059669";
+      case "warning":
+        return "#ea580c";
+      case "critical":
+        return "#dc2626";
+      default:
+        return "#64748b";
     }
   };
 
@@ -53,29 +61,40 @@ function StationDetailContent() {
   ];
 
   const timeframeOptions = [
-    { key: "7d" as const, label: "7D" },
-    { key: "30d" as const, label: "30D" },
+    { key: "6m" as const, label: "6M" },
     { key: "1y" as const, label: "1Y" },
+    { key: "2y" as const, label: "2Y" },
   ];
 
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
           <ArrowLeft size={24} color="#1e293b" />
         </TouchableOpacity>
         <View style={styles.headerInfo}>
           <Text style={styles.stationName}>{station.name}</Text>
-          <Text style={styles.stationLocation}>{station.district}, {station.state}</Text>
+          <Text style={styles.stationLocation}>
+            {station.district}, {station.state}
+          </Text>
         </View>
         <View style={styles.statusIcons}>
           <View style={styles.statusIcon}>
-            <Battery size={16} color={station.batteryLevel > 20 ? "#059669" : "#dc2626"} />
+            <Battery
+              size={16}
+              color={station.batteryLevel > 20 ? "#059669" : "#dc2626"}
+            />
             <Text style={styles.statusText}>{station.batteryLevel}%</Text>
           </View>
           <View style={styles.statusIcon}>
-            <Signal size={16} color={station.signalStrength > 50 ? "#059669" : "#ea580c"} />
+            <Signal
+              size={16}
+              color={station.signalStrength > 50 ? "#059669" : "#ea580c"}
+            />
           </View>
         </View>
       </View>
@@ -91,14 +110,16 @@ function StationDetailContent() {
                   key={option.key}
                   style={[
                     styles.timeframeButton,
-                    chartTimeframe === option.key && styles.timeframeButtonActive,
+                    chartTimeframe === option.key &&
+                      styles.timeframeButtonActive,
                   ]}
                   onPress={() => setChartTimeframe(option.key)}
                 >
                   <Text
                     style={[
                       styles.timeframeButtonText,
-                      chartTimeframe === option.key && styles.timeframeButtonTextActive,
+                      chartTimeframe === option.key &&
+                        styles.timeframeButtonTextActive,
                     ]}
                   >
                     {option.label}
@@ -114,22 +135,45 @@ function StationDetailContent() {
         <View style={styles.metricsContainer}>
           <View style={styles.metricCard}>
             <Text style={styles.metricLabel}>Latest Water Level</Text>
-            <Text style={styles.metricValue}>{station.currentLevel.toFixed(2)}m</Text>
+            <Text style={styles.metricValue}>
+              {station.currentLevel.toFixed(2)}m
+            </Text>
             <Text style={styles.metricSubtext}>below ground level</Text>
           </View>
-          
+
           <View style={styles.metricCard}>
             <Text style={styles.metricLabel}>Status</Text>
-            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(station.status) }]}>
-              <Text style={styles.statusBadgeText}>{station.status.toUpperCase()}</Text>
+            <View
+              style={[
+                styles.statusBadge,
+                { backgroundColor: getStatusColor(station.status) },
+              ]}
+            >
+              <Text style={styles.statusBadgeText}>
+                {station.status.toUpperCase()}
+              </Text>
             </View>
           </View>
 
           <View style={styles.metricCard}>
             <Text style={styles.metricLabel}>Groundwater Availability</Text>
             <View style={styles.availabilityContainer}>
-              <View style={[styles.availabilityDial, { borderColor: getAvailabilityColor(station.availabilityIndex) }]}>
-                <Text style={[styles.availabilityValue, { color: getAvailabilityColor(station.availabilityIndex) }]}>
+              <View
+                style={[
+                  styles.availabilityDial,
+                  {
+                    borderColor: getAvailabilityColor(
+                      station.availabilityIndex
+                    ),
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.availabilityValue,
+                    { color: getAvailabilityColor(station.availabilityIndex) },
+                  ]}
+                >
                   {(station.availabilityIndex * 100).toFixed(0)}%
                 </Text>
               </View>
@@ -173,9 +217,7 @@ function StationDetailContent() {
 }
 
 export default function StationDetailScreen() {
-  return (
-    <StationDetailContent />
-  );
+  return <StationDetailContent />;
 }
 
 const styles = StyleSheet.create({

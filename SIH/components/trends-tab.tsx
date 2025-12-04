@@ -9,21 +9,33 @@ interface TrendsTabProps {
 
 export function TrendsTab({ station }: TrendsTabProps) {
   const calculateTrend = (days: number) => {
-    if (station.recentReadings.length < 2) return { value: 0, direction: "stable" as const };
-    
+    if (station.recentReadings.length < 2)
+      return { value: 0, direction: "stable" as const };
+
     const recent = station.recentReadings.slice(-days);
     const first = recent[0]?.level || 0;
     const last = recent[recent.length - 1]?.level || 0;
     const change = last - first;
-    
+
     return {
       value: Math.abs(change),
-      direction: change > 0.1 ? "rising" as const : change < -0.1 ? "falling" as const : "stable" as const,
+      direction:
+        change > 0.1
+          ? ("rising" as const)
+          : change < -0.1
+          ? ("falling" as const)
+          : ("stable" as const),
     };
   };
 
-  const weeklyTrend = station.recentReadings.length >= 2 ? calculateTrend(7) : { value: 0, direction: "stable" as const };
-  const monthlyTrend = station.recentReadings.length >= 2 ? calculateTrend(30) : { value: 0, direction: "stable" as const };
+  const weeklyTrend =
+    station.recentReadings.length >= 2
+      ? calculateTrend(7)
+      : { value: 0, direction: "stable" as const };
+  const monthlyTrend =
+    station.recentReadings.length >= 2
+      ? calculateTrend(30)
+      : { value: 0, direction: "stable" as const };
 
   const getTrendIcon = (direction: string) => {
     switch (direction) {
@@ -53,17 +65,23 @@ export function TrendsTab({ station }: TrendsTabProps) {
         <Text style={styles.cardTitle}>7-Day Trend</Text>
         <View style={styles.trendRow}>
           {getTrendIcon(weeklyTrend.direction)}
-          <Text style={[styles.trendValue, { color: getTrendColor(weeklyTrend.direction) }]}>
-            {weeklyTrend.direction === "stable" ? "Stable" : `${weeklyTrend.value.toFixed(2)}m ${weeklyTrend.direction}`}
+          <Text
+            style={[
+              styles.trendValue,
+              { color: getTrendColor(weeklyTrend.direction) },
+            ]}
+          >
+            {weeklyTrend.direction === "stable"
+              ? "Stable"
+              : `${weeklyTrend.value.toFixed(2)}m ${weeklyTrend.direction}`}
           </Text>
         </View>
         <Text style={styles.trendDescription}>
-          {weeklyTrend.direction === "rising" 
+          {weeklyTrend.direction === "rising"
             ? "Water level is rising, indicating possible recharge"
             : weeklyTrend.direction === "falling"
             ? "Water level is declining, monitor closely"
-            : "Water level remains stable"
-          }
+            : "Water level remains stable"}
         </Text>
       </View>
 
@@ -71,43 +89,71 @@ export function TrendsTab({ station }: TrendsTabProps) {
         <Text style={styles.cardTitle}>30-Day Trend</Text>
         <View style={styles.trendRow}>
           {getTrendIcon(monthlyTrend.direction)}
-          <Text style={[styles.trendValue, { color: getTrendColor(monthlyTrend.direction) }]}>
-            {monthlyTrend.direction === "stable" ? "Stable" : `${monthlyTrend.value.toFixed(2)}m ${monthlyTrend.direction}`}
+          <Text
+            style={[
+              styles.trendValue,
+              { color: getTrendColor(monthlyTrend.direction) },
+            ]}
+          >
+            {monthlyTrend.direction === "stable"
+              ? "Stable"
+              : `${monthlyTrend.value.toFixed(2)}m ${monthlyTrend.direction}`}
           </Text>
         </View>
         <Text style={styles.trendDescription}>
-          {monthlyTrend.direction === "rising" 
+          {monthlyTrend.direction === "rising"
             ? "Long-term recovery trend observed"
             : monthlyTrend.direction === "falling"
             ? "Long-term decline requires attention"
-            : "Long-term stability maintained"
-          }
+            : "Long-term stability maintained"}
         </Text>
       </View>
 
       <View style={styles.statsGrid}>
         <View style={styles.statItem}>
-          <Text style={styles.statLabel}>Min Level (30d)</Text>
+          <Text style={styles.statLabel}>Min Level (6m)</Text>
           <Text style={styles.statValue}>
-            {station.recentReadings.length > 0 ? Math.min(...station.recentReadings.map(r => r.level)).toFixed(2) : "-"}m
+            {station.recentReadings.length > 0
+              ? Math.min(...station.recentReadings.map((r) => r.level)).toFixed(
+                  2
+                )
+              : "-"}
+            m
           </Text>
         </View>
         <View style={styles.statItem}>
-          <Text style={styles.statLabel}>Max Level (30d)</Text>
+          <Text style={styles.statLabel}>Max Level (6m)</Text>
           <Text style={styles.statValue}>
-            {station.recentReadings.length > 0 ? Math.max(...station.recentReadings.map(r => r.level)).toFixed(2) : "-"}m
+            {station.recentReadings.length > 0
+              ? Math.max(...station.recentReadings.map((r) => r.level)).toFixed(
+                  2
+                )
+              : "-"}
+            m
           </Text>
         </View>
         <View style={styles.statItem}>
           <Text style={styles.statLabel}>Average Level</Text>
           <Text style={styles.statValue}>
-            {station.recentReadings.length > 0 ? (station.recentReadings.reduce((sum, r) => sum + r.level, 0) / station.recentReadings.length).toFixed(2) : "-"}m
+            {station.recentReadings.length > 0
+              ? (
+                  station.recentReadings.reduce((sum, r) => sum + r.level, 0) /
+                  station.recentReadings.length
+                ).toFixed(2)
+              : "-"}
+            m
           </Text>
         </View>
         <View style={styles.statItem}>
           <Text style={styles.statLabel}>Variability</Text>
           <Text style={styles.statValue}>
-            {station.recentReadings.length > 1 ? (Math.max(...station.recentReadings.map(r => r.level)) - Math.min(...station.recentReadings.map(r => r.level))).toFixed(2) : "-"}m
+            {station.recentReadings.length > 1
+              ? (
+                  Math.max(...station.recentReadings.map((r) => r.level)) -
+                  Math.min(...station.recentReadings.map((r) => r.level))
+                ).toFixed(2)
+              : "-"}
+            m
           </Text>
         </View>
       </View>

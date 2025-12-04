@@ -3,7 +3,7 @@ import { Dimensions, StyleSheet, Text, View } from "react-native";
 import Svg, { Circle, Line, Path, Text as SvgText } from "react-native-svg";
 
 interface TrendChartProps {
-  timeframe: "7d" | "30d" | "6M" | "1y";
+  timeframe: "6m" | "1y" | "2y";
 }
 
 export function TrendChart({ timeframe }: TrendChartProps) {
@@ -12,28 +12,29 @@ export function TrendChart({ timeframe }: TrendChartProps) {
   const chartHeight = 180;
 
   const generateMockData = () => {
-    const points = timeframe === "7d" ? 7 : timeframe === "30d" ? 30 : timeframe === "6M" ? 26 : 12;
+    const points = timeframe === "6m" ? 26 : timeframe === "1y" ? 12 : 24; // 6months=26 weeks, 1year=12 months, 2years=24 months
     const data = [];
     let baseValue = 15;
-    
+
     for (let i = 0; i < points; i++) {
       baseValue += (Math.random() - 0.5) * 2;
       data.push({
         x: i,
         y: Math.max(5, Math.min(25, baseValue)),
-        label: timeframe === "1y" ? `M${i + 1}` : timeframe === "6M" ? `W${i + 1}` : `D${i + 1}`,
+        label: timeframe === "6m" ? `W${i + 1}` : `M${i + 1}`, // 6months=weeks, 1year/2year=months
       });
     }
     return data;
   };
 
   const data = generateMockData();
-  const maxY = Math.max(...data.map(d => d.y));
-  const minY = Math.min(...data.map(d => d.y));
+  const maxY = Math.max(...data.map((d) => d.y));
+  const minY = Math.min(...data.map((d) => d.y));
   const yRange = maxY - minY;
 
   const getScaledX = (x: number) => (x / (data.length - 1)) * chartWidth;
-  const getScaledY = (y: number) => chartHeight - ((y - minY) / yRange) * chartHeight;
+  const getScaledY = (y: number) =>
+    chartHeight - ((y - minY) / yRange) * chartHeight;
 
   const pathData = data
     .map((point, index) => {
@@ -47,79 +48,78 @@ export function TrendChart({ timeframe }: TrendChartProps) {
     <View style={styles.container}>
       <View style={styles.chartWrapper}>
         <Svg width={chartWidth} height={chartHeight + 40} style={styles.chart}>
-        {/* Grid lines */}
-        {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
-          const y = ratio * chartHeight;
-          return (
-            <Line
-              key={ratio}
-              x1={0}
-              y1={y}
-              x2={chartWidth}
-              y2={y}
-              stroke="#f1f5f9"
-              strokeWidth={1}
+          {/* Grid lines */}
+          {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
+            const y = ratio * chartHeight;
+            return (
+              <Line
+                key={ratio}
+                x1={0}
+                y1={y}
+                x2={chartWidth}
+                y2={y}
+                stroke="#f1f5f9"
+                strokeWidth={1}
+              />
+            );
+          })}
+
+          {/* Y-axis labels */}
+          {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
+            const y = ratio * chartHeight;
+            const value = maxY - ratio * yRange;
+            return (
+              <SvgText
+                key={ratio}
+                x={-10}
+                y={y + 4}
+                fontSize={10}
+                fill="#64748b"
+                textAnchor="end"
+              >
+                {value.toFixed(1)}
+              </SvgText>
+            );
+          })}
+
+          {/* Chart line */}
+          <Path d={pathData} stroke="#0891b2" strokeWidth={2} fill="none" />
+
+          {/* Data points */}
+          {data.map((point, index) => (
+            <Circle
+              key={index}
+              cx={getScaledX(point.x)}
+              cy={getScaledY(point.y)}
+              r={3}
+              fill="#0891b2"
             />
-          );
-        })}
+          ))}
 
-        {/* Y-axis labels */}
-        {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
-          const y = ratio * chartHeight;
-          const value = maxY - (ratio * yRange);
-          return (
-            <SvgText
-              key={ratio}
-              x={-10}
-              y={y + 4}
-              fontSize={10}
-              fill="#64748b"
-              textAnchor="end"
-            >
-              {value.toFixed(1)}
-            </SvgText>
-          );
-        })}
-
-        {/* Chart line */}
-        <Path
-          d={pathData}
-          stroke="#0891b2"
-          strokeWidth={2}
-          fill="none"
-        />
-
-        {/* Data points */}
-        {data.map((point, index) => (
-          <Circle
-            key={index}
-            cx={getScaledX(point.x)}
-            cy={getScaledY(point.y)}
-            r={3}
-            fill="#0891b2"
-          />
-        ))}
-
-        {/* X-axis labels */}
-        {data.filter((_, index) => index % Math.ceil(data.length / 6) === 0).map((point, index) => (
-          <SvgText
-            key={index}
-            x={getScaledX(point.x)}
-            y={chartHeight + 20}
-            fontSize={10}
-            fill="#64748b"
-            textAnchor="middle"
-          >
-            {point.label}
-          </SvgText>
-        ))}
+          {/* X-axis labels */}
+          {data
+            .filter((_, index) => index % Math.ceil(data.length / 6) === 0)
+            .map((point, index) => (
+              <SvgText
+                key={index}
+                x={getScaledX(point.x)}
+                y={chartHeight + 20}
+                fontSize={10}
+                fill="#64748b"
+                textAnchor="middle"
+              >
+                {point.label}
+              </SvgText>
+            ))}
         </Svg>
       </View>
 
       <View style={styles.legend}>
         <View style={styles.legendItem}>
           <View style={styles.legendLine} />
-          <Text style={styles.legendText}>Average Water Level (m below ground)</Text>
+          <Text style={styles.legendText}>
+            Average Water Level (m below ground)
+          </Text>
         </View>
       </View>
     </View>
