@@ -33,7 +33,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useStations } from "@/providers/stations-provider";
 import { fetchWeather, WeatherData } from "@/services/weather-service";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { FarmerHeader } from "@/components/FarmerHeader";
+import { FarmerHeader, AiFab } from "@/components/FarmerHeader";
 
 const { width } = Dimensions.get("window");
 
@@ -42,70 +42,27 @@ const getWeatherIcon = (condition: string, size: number = 24) => {
 
   switch (condition?.toLowerCase()) {
     case "clear":
-    case "clear sky":
       return <Sun size={size} color={color} />;
     case "clouds":
     case "few clouds":
     case "scattered clouds":
-    case "partly cloudy":
       return <CloudSun size={size} color={color} />;
     case "broken clouds":
     case "overcast clouds":
-    case "overcast":
       return <Cloud size={size} color={color} />;
     case "rain":
     case "light rain":
     case "moderate rain":
     case "heavy intensity rain":
-    case "very heavy rain":
-    case "extreme rain":
     case "shower rain":
-    case "light intensity shower rain":
-    case "heavy intensity shower rain":
-    case "ragged shower rain":
       return <CloudRain size={size} color={color} />;
     case "thunderstorm":
-    case "thunderstorm with light rain":
-    case "thunderstorm with rain":
-    case "thunderstorm with heavy rain":
-    case "light thunderstorm":
-    case "heavy thunderstorm":
-    case "ragged thunderstorm":
       return <CloudLightning size={size} color={color} />;
     case "snow":
-    case "light snow":
-    case "heavy snow":
-    case "sleet":
-    case "light shower sleet":
-    case "shower sleet":
-    case "light rain and snow":
-    case "rain and snow":
-    case "light shower snow":
-    case "shower snow":
-    case "heavy shower snow":
       return <Snowflake size={size} color={color} />;
     case "mist":
-    case "smoke":
-    case "haze":
-    case "sand":
-    case "dust":
     case "fog":
-    case "sand/dust whirls":
-    case "volcanic ash":
-    case "squalls":
-    case "tornado":
       return <CloudFog size={size} color={color} />;
-    case "drizzle":
-    case "light intensity drizzle":
-    case "drizzle rain":
-    case "heavy intensity drizzle":
-    case "light intensity drizzle rain":
-    case "drizzle rain":
-    case "heavy intensity drizzle rain":
-    case "shower rain and drizzle":
-    case "heavy shower rain and drizzle":
-    case "shower drizzle":
-      return <CloudRain size={size} color={color} />;
     default:
       return <Sun size={size} color={color} />;
   }
@@ -214,12 +171,10 @@ export default function WeatherScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <FarmerHeader />
+      <AiFab />
       <ScrollView style={styles.scrollContent}>
         {/* Header */}
-        <PageHeader
-          title="Weather"
-          subtitle={weather?.current.city || "Current Location"}
-        />
+        <PageHeader title="Weather" subtitle={weather?.current.city || "Current Location"} />
 
         {/* Main Weather Card */}
         <LinearGradient
@@ -277,9 +232,9 @@ export default function WeatherScreen() {
           </ScrollView>
         </View>
 
-        {/* 5-Day Forecast list */}
+        {/* 7-Day style Forecast list */}
         <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>5-Day Forecast</Text>
+          <Text style={styles.sectionTitle}>7-Day Forecast</Text>
           {weather?.forecast.slice(0, 5).map((item, index) => (
             <View key={index} style={styles.dailyItem}>
               <Text style={styles.dailyDay}>{item.date}</Text>

@@ -1,0 +1,7 @@
+# Python environment
+backend/venv/
+# Node modules (if you have them)
+node_modules/
+# OS generated files
+.DS_Store
+Thumbs.db

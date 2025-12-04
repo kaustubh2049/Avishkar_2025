@@ -1,26 +1,16 @@
 import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-} from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  AlertTriangle,
-  Droplets,
-  CloudRain,
-  Volume2,
-} from "lucide-react-native";
+import { AlertTriangle, Droplets, CloudRain, Volume2 } from "lucide-react-native";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { FarmerHeader } from "@/components/FarmerHeader";
+import { FarmerHeader, AiFab } from "@/components/FarmerHeader";
 import { Card } from "@/components/ui/Card";
 
 export default function AlertsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <FarmerHeader />
+      <AiFab />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <PageHeader
           title="Alerts & Notifications"
@@ -56,6 +46,7 @@ export default function AlertsScreen() {
           time="1 day ago"
           icon={AlertTriangle}
         />
+
       </ScrollView>
     </SafeAreaView>
   );
@@ -63,34 +54,14 @@ export default function AlertsScreen() {
 
 function AlertCard({ type, title, desc, time, icon: Icon }: any) {
   const colors = {
-    warning: {
-      bg: "#fffbeb",
-      border: "#fcd34d",
-      icon: "#d97706",
-      text: "#92400e",
-    },
-    danger: {
-      bg: "#fef2f2",
-      border: "#fca5a5",
-      icon: "#dc2626",
-      text: "#991b1b",
-    },
-    info: {
-      bg: "#eff6ff",
-      border: "#93c5fd",
-      icon: "#2563eb",
-      text: "#1e40af",
-    },
+    warning: { bg: "#fffbeb", border: "#fcd34d", icon: "#d97706", text: "#92400e" },
+    danger: { bg: "#fef2f2", border: "#fca5a5", icon: "#dc2626", text: "#991b1b" },
+    info: { bg: "#eff6ff", border: "#93c5fd", icon: "#2563eb", text: "#1e40af" },
   };
   const color = colors[type as keyof typeof colors];
 
   return (
-    <Card
-      style={[
-        styles.card,
-        { backgroundColor: color.bg, borderColor: color.border },
-      ]}
-    >
+    <Card style={[styles.card, { backgroundColor: color.bg, borderColor: color.border }]}> 
       <View style={styles.cardHeader}>
         <View style={[styles.iconBox, { backgroundColor: color.bg }]}>
           <Icon size={24} color={color.icon} />
@@ -113,7 +84,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 20,
   },
-
+  
   voiceButton: {
     flexDirection: "row",
     alignItems: "center",

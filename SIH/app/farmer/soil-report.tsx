@@ -2,18 +2,17 @@ import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack } from "expo-router";
-import { FarmerHeader } from "@/components/FarmerHeader";
+import { FarmerHeader, AiFab } from "@/components/FarmerHeader";
 import { Sprout, AlertCircle, CheckCircle2 } from "lucide-react-native";
 
 export default function SoilReportScreen() {
   return (
     <SafeAreaView style={styles.container}>
-      <Stack.Screen
-        options={{ headerTitle: "Soil Health", headerBackTitle: "Home" }}
-      />
+      <Stack.Screen options={{ headerTitle: "Soil Health", headerBackTitle: "Home" }} />
       <FarmerHeader />
       <AiFab />
       <ScrollView contentContainerStyle={styles.scrollContent}>
+        
         {/* Overall Score */}
         <View style={styles.scoreCard}>
           <View style={styles.scoreCircle}>
@@ -22,9 +21,7 @@ export default function SoilReportScreen() {
           </View>
           <View style={styles.scoreInfo}>
             <Text style={styles.scoreTitle}>Soil Fertility Score</Text>
-            <Text style={styles.scoreSubtitle}>
-              Your soil is healthy but needs some Nitrogen.
-            </Text>
+            <Text style={styles.scoreSubtitle}>Your soil is healthy but needs some Nitrogen.</Text>
           </View>
         </View>
 
@@ -49,9 +46,7 @@ export default function SoilReportScreen() {
             </View>
             <View style={styles.recContent}>
               <Text style={styles.recTitle}>Urea Application</Text>
-              <Text style={styles.recDesc}>
-                Apply 25kg/acre to boost Nitrogen levels.
-              </Text>
+              <Text style={styles.recDesc}>Apply 25kg/acre to boost Nitrogen levels.</Text>
             </View>
           </View>
           <View style={styles.divider} />
@@ -62,26 +57,17 @@ export default function SoilReportScreen() {
             </View>
             <View style={styles.recContent}>
               <Text style={styles.recTitle}>Compost Mix</Text>
-              <Text style={styles.recDesc}>
-                Add organic compost for better soil texture.
-              </Text>
+              <Text style={styles.recDesc}>Add organic compost for better soil texture.</Text>
             </View>
           </View>
         </View>
+
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function NutrientCard({
-  name,
-  value,
-  status,
-}: {
-  name: string;
-  value: string;
-  status: "good" | "medium" | "low";
-}) {
+function NutrientCard({ name, value, status }: { name: string; value: string; status: "good" | "medium" | "low" }) {
   const colors = {
     good: { bg: "#dcfce7", text: "#166534", border: "#86efac" },
     medium: { bg: "#fef9c3", text: "#854d0e", border: "#fde047" },
@@ -90,12 +76,7 @@ function NutrientCard({
   const color = colors[status];
 
   return (
-    <View
-      style={[
-        styles.nutrientCard,
-        { borderColor: color.border, backgroundColor: color.bg },
-      ]}
-    >
+    <View style={[styles.nutrientCard, { borderColor: color.border, backgroundColor: color.bg }]}>
       <Text style={[styles.nutrientName, { color: color.text }]}>{name}</Text>
       <Text style={[styles.nutrientValue, { color: color.text }]}>{value}</Text>
     </View>

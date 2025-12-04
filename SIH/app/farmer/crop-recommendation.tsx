@@ -1,14 +1,8 @@
 import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-} from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack } from "expo-router";
-import { FarmerHeader } from "@/components/FarmerHeader";
+import { FarmerHeader, AiFab } from "@/components/FarmerHeader";
 import { Droplets, IndianRupee, ChevronRight } from "lucide-react-native";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
@@ -16,9 +10,7 @@ import { Card } from "@/components/ui/Card";
 export default function CropRecommendationScreen() {
   return (
     <SafeAreaView style={styles.container}>
-      <Stack.Screen
-        options={{ headerTitle: "Crop Advisor", headerBackTitle: "Home" }}
-      />
+      <Stack.Screen options={{ headerTitle: "Crop Advisor", headerBackTitle: "Home" }} />
       <FarmerHeader />
       <AiFab />
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -49,42 +41,26 @@ export default function CropRecommendationScreen() {
           income="₹35,000/acre"
           color="#ca8a04"
         />
+
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function CropCard({
-  name,
-  match,
-  water,
-  income,
-  color,
-}: {
-  name: string;
-  match: string;
-  water: string;
-  income: string;
-  color: string;
-}) {
+function CropCard({ name, match, water, income, color }: { name: string; match: string; water: string; income: string; color: string }) {
   return (
     <TouchableOpacity style={styles.card} activeOpacity={0.8}>
       <View style={[styles.colorStrip, { backgroundColor: color }]} />
-      <Card
-        style={[
-          styles.cardContent,
-          { padding: 16, borderWidth: 0, elevation: 0, shadowOpacity: 0 },
-        ]}
-      >
+      <Card style={[styles.cardContent, { padding: 16, borderWidth: 0, elevation: 0, shadowOpacity: 0 }]}> 
         <View style={styles.cardHeader}>
           <Text style={styles.cropName}>{name}</Text>
-          <View style={[styles.matchBadge, { backgroundColor: color + "20" }]}>
+          <View style={[styles.matchBadge, { backgroundColor: color + "20" }]}> 
             <Text style={[styles.matchText, { color: color }]}>{match}</Text>
           </View>
         </View>
-
+        
         <View style={styles.divider} />
-
+        
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
             <Droplets size={16} color="#64748b" />

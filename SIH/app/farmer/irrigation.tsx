@@ -2,18 +2,17 @@ import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Stack } from "expo-router";
-import { FarmerHeader } from "@/components/FarmerHeader";
+import { FarmerHeader, AiFab } from "@/components/FarmerHeader";
 import { CloudRain, Calendar, Clock, Droplets } from "lucide-react-native";
 
 export default function IrrigationScreen() {
   return (
     <SafeAreaView style={styles.container}>
-      <Stack.Screen
-        options={{ headerTitle: "Irrigation Plan", headerBackTitle: "Home" }}
-      />
+      <Stack.Screen options={{ headerTitle: "Irrigation Plan", headerBackTitle: "Home" }} />
       <FarmerHeader />
       <AiFab />
       <ScrollView contentContainerStyle={styles.scrollContent}>
+        
         {/* Main Action Card */}
         <View style={styles.mainCard}>
           <View style={styles.iconCircle}>
@@ -44,16 +43,15 @@ export default function IrrigationScreen() {
         <Text style={styles.sectionTitle}>Water Saving Tips</Text>
         <View style={styles.tipCard}>
           <Text style={styles.tipText}>
-            💧 Irrigate in the early morning or late evening to reduce
-            evaporation loss.
+            💧 Irrigate in the early morning or late evening to reduce evaporation loss.
           </Text>
         </View>
         <View style={styles.tipCard}>
           <Text style={styles.tipText}>
-            🌾 Use mulch around plants to retain soil moisture for longer
-            periods.
+            🌾 Use mulch around plants to retain soil moisture for longer periods.
           </Text>
         </View>
+
       </ScrollView>
     </SafeAreaView>
   );
