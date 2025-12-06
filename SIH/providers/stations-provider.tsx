@@ -1,7 +1,13 @@
 import { supabase } from "@/lib/supabase";
-import createContextHook from "@nkzw/create-context-hook";
 import * as Location from "expo-location";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { Platform } from "react-native";
 
 export interface DatabaseReading {
@@ -285,15 +291,202 @@ const calculateDistance = (
   return R * c;
 };
 
+// Calculate groundwater recharge using Water Table Fluctuation (WTF) method
+// R = Sy × ΔH
+const calculateGroundwaterRecharge = (
+  station: Station
+): { date: string; amount: number; deltaH: number }[] => {
+  const { recentReadings, specificYield } = station;
+  if (recentReadings.length < 2) return [];
+
+  const rechargeEvents: { date: string; amount: number; deltaH: number }[] = [];
+
+  // Sort readings by timestamp
+  const sortedReadings = [...recentReadings].sort(
+    (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+  );
+
+  // Calculate recharge for each consecutive pair of readings
+  for (let i = 1; i < sortedReadings.length; i++) {
+    const prevReading = sortedReadings[i - 1];
+    const currentReading = sortedReadings[i];
+
+    // Calculate water level change (ΔH in meters)
+    const deltaH = currentReading.level - prevReading.level;
+
+    // Only consider positive changes as recharge events
+    if (deltaH > 0) {
+      // Apply WTF formula: R = Sy × ΔH
+      // Convert from meters to millimeters (×1000)
+      const recharge = specificYield * deltaH * 1000;
+
+      rechargeEvents.push({
+        date: currentReading.timestamp.split("T")[0], // Extract date
+        amount: recharge,
+        deltaH: deltaH,
+      });
+    }
+  }
+
+  return rechargeEvents;
+};
+
+// Process station data to include calculated recharge
+const processStationWithRecharge = (station: Station): Station => {
+  // For stations from database with minimal data, we need to create some sample readings
+  // to demonstrate the recharge calculation
+  let processedStation = { ...station };
+
+  // Ensure minimum specific yield for calculations
+  if (processedStation.specificYield <= 0) {
+    processedStation.specificYield = 0.15; // Default for alluvial aquifers
+  }
+
+  // Update status based on current water level (only if we have meaningful water level data)
+  const getStatusFromWaterLevel = (level: number): Station["status"] => {
+    if (level > 20) return "critical"; // High water level (critical/red)
+    if (level >= 15 && level <= 20) return "warning"; // Moderate water level (warning/yellow)
+    return "normal"; // Normal water level (green)
+  };
+
+  // Only update status if we have meaningful water level data (> 0)
+  // Preserve original status for pinpoint stations with currentLevel: 0
+  if (processedStation.currentLevel > 0) {
+    processedStation.status = getStatusFromWaterLevel(
+      processedStation.currentLevel
+    );
+  }
+  // Otherwise, keep the original status from the pinpoint mapping
+
+  if (processedStation.recentReadings.length < 2) {
+    // Generate sample historical readings for demonstration with realistic water level changes
+    const now = new Date();
+    const sampleReadings = [];
+    const baseLevel = station.currentLevel;
+
+    for (let i = 4; i >= 0; i--) {
+      const timestamp = new Date(now.getTime() - i * 24 * 60 * 60 * 1000); // i days ago
+      // Create realistic water level fluctuations including recharge events
+      let levelChange = 0;
+
+      // Simulate recharge events on some days
+      if (i === 3 || i === 1) {
+        levelChange = 0.05 + Math.random() * 0.1; // 5-15cm rise (recharge)
+      } else {
+        levelChange = -0.02 + Math.random() * 0.04; // -2 to +2cm normal variation
+      }
+
+      const level = Math.max(0, baseLevel - i * 0.01 + levelChange);
+
+      sampleReadings.push({
+        timestamp: timestamp.toISOString(),
+        level: level,
+        temperature: 24 + Math.random() * 4, // 24-28°C
+      });
+    }
+
+    processedStation.recentReadings = sampleReadings;
+  }
+
+  // Calculate actual recharge using WTF method
+  const calculatedRecharge = calculateGroundwaterRecharge(processedStation);
+
+  // Debug log
+  console.log(
+    `Station ${processedStation.name}: Sy=${processedStation.specificYield}, Readings=${processedStation.recentReadings.length}, Calculated Recharge Events=${calculatedRecharge.length}`
+  );
+
+  // If we have calculated recharge events, use them; otherwise keep existing data
+  if (calculatedRecharge.length > 0) {
+    processedStation.rechargeData = calculatedRecharge.map((event) => ({
+      date: event.date,
+      amount: event.amount,
+    }));
+    console.log(
+      `Station ${processedStation.name} recharge data:`,
+      processedStation.rechargeData
+    );
+  } else if (processedStation.rechargeData.length === 0) {
+    // Fallback: create minimal recharge data for display
+    processedStation.rechargeData = [
+      {
+        date: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .split("T")[0],
+        amount: 0,
+      },
+      {
+        date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .split("T")[0],
+        amount: 0,
+      },
+      {
+        date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .split("T")[0],
+        amount: 0,
+      },
+      {
+        date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .split("T")[0],
+        amount: 0,
+      },
+      { date: new Date().toISOString().split("T")[0], amount: 0 },
+    ];
+  }
+
+  return processedStation;
+};
+
 export interface LocationData {
   latitude: number;
   longitude: number;
   accuracy?: number;
 }
 
-export const [StationsProvider, useStations] = createContextHook(() => {
+// Context type definition
+interface StationsContextType {
+  stations: Station[];
+  alerts: Alert[];
+  nearbyStations: Station[];
+  estimatedLevel: number | null;
+  userLocation: LocationData | null;
+  locationPermission: Location.LocationPermissionResponse | null;
+  isLoadingLocation: boolean;
+  locationError: string | null;
+  isLoadingStations: boolean;
+  stationsError: string | null;
+  getStationById: (id: string) => Station | undefined;
+  getStationReadings: (
+    stationId: string,
+    timeframe: string
+  ) => Promise<{ timestamp: string; level: number; temperature?: number }[]>;
+  getAnalytics: () => { nearbyStations: Station[]; regionalData: any };
+  requestLocationPermission: () => Promise<void>;
+}
+
+// Create context
+const StationsContext = createContext<StationsContextType | undefined>(
+  undefined
+);
+
+// Custom hook to use context
+export const useStations = () => {
+  const context = useContext(StationsContext);
+  if (context === undefined) {
+    throw new Error("useStations must be used within a StationsProvider");
+  }
+  return context;
+};
+
+// Provider component
+export const StationsProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [stations, setStations] = useState<Station[]>(mockStations);
-  const alerts = mockAlerts;
+  const [dynamicAlerts, setDynamicAlerts] = useState<Alert[]>([]);
   const [userLocation, setUserLocation] = useState<LocationData | null>(null);
   const [locationPermission, setLocationPermission] =
     useState<Location.LocationPermissionResponse | null>(null);
@@ -314,6 +507,26 @@ export const [StationsProvider, useStations] = createContextHook(() => {
   };
 
   const mapRowToStation = (row: any): Station => {
+    const waterLevel = Number(
+      row.water_level ?? row.waterlevel ?? row.Water_Level_m ?? 0
+    );
+
+    // Determine status based on water level ranges
+    const getStatusFromWaterLevel = (level: number): Station["status"] => {
+      if (level > 20) return "critical"; // High water level (critical)
+      if (level >= 15 && level <= 20) return "warning"; // Moderate water level (warning/yellow)
+      return "normal"; // Normal water level (green)
+    };
+
+    const status = getStatusFromWaterLevel(waterLevel);
+
+    // Debug log for status assignment
+    console.log(
+      `Station mapping: ${
+        row.name ?? row.station_id ?? row.Area_Name ?? "Unknown"
+      } - Water Level: ${waterLevel}m - Status: ${status}`
+    );
+
     return {
       id: String(
         row.id ??
@@ -331,10 +544,8 @@ export const [StationsProvider, useStations] = createContextHook(() => {
       state: row.state ?? "",
       latitude: Number(row.latitude ?? row.Latitude ?? row.lat),
       longitude: Number(row.longitude ?? row.Longitude ?? row.lon),
-      currentLevel: Number(
-        row.water_level ?? row.waterlevel ?? row.Water_Level_m ?? 0
-      ),
-      status: "normal",
+      currentLevel: waterLevel,
+      status: status,
       batteryLevel: 100,
       signalStrength: 100,
       availabilityIndex: 1,
@@ -342,8 +553,8 @@ export const [StationsProvider, useStations] = createContextHook(() => {
         row.date ?? row.Date
           ? new Date(row.date ?? row.Date).toISOString()
           : new Date().toISOString(),
-      aquiferType: row.aquifer_type ?? "",
-      specificYield: Number(row.specific_yield ?? 0),
+      aquiferType: row.aquifer_type ?? "Alluvial",
+      specificYield: Number(row.specific_yield ?? 0.15), // Default 0.15 for alluvial aquifers
       installationDate:
         row.installation_date ?? new Date().toISOString().slice(0, 10),
       depth: Number(row.depth ?? 0),
@@ -386,8 +597,19 @@ export const [StationsProvider, useStations] = createContextHook(() => {
       Heavy: "critical",
       None: "normal",
     };
+
     const lat = parseFloat(String(row.Latitude ?? row.latitude ?? ""));
     const lon = parseFloat(String(row.Longitude ?? row.longitude ?? ""));
+    const dwlrStatus = String(row.DWLR_Status ?? "").trim();
+    const status = statusMap[dwlrStatus] ?? "normal";
+
+    // Debug log for pinpoint status assignment
+    console.log(
+      `Pinpoint mapping: ${
+        row.Area_Name ?? "Unknown"
+      } - DWLR_Status: '${dwlrStatus}' - Status: ${status}`
+    );
+
     return {
       id: String(row.Serial_No ?? row.id ?? row.P_Key ?? Math.random()),
       name: String(
@@ -398,13 +620,13 @@ export const [StationsProvider, useStations] = createContextHook(() => {
       latitude: isFinite(lat) ? lat : 0,
       longitude: isFinite(lon) ? lon : 0,
       currentLevel: 0,
-      status: statusMap[String(row.DWLR_Status ?? "").trim()] ?? "normal",
+      status: status,
       batteryLevel: 100,
       signalStrength: 100,
       availabilityIndex: 1,
       lastUpdated: new Date().toISOString(),
-      aquiferType: "",
-      specificYield: 0,
+      aquiferType: "Alluvial",
+      specificYield: 0.15, // Default specific yield
       installationDate: new Date().toISOString().slice(0, 10),
       depth: 0,
       oxygenLevel: undefined,
@@ -413,6 +635,13 @@ export const [StationsProvider, useStations] = createContextHook(() => {
       recentReadings: [],
       rechargeData: [],
     };
+
+    // Ensure minimum specific yield
+    if (station.specificYield <= 0) {
+      station.specificYield = 0.15;
+    }
+
+    return station;
   };
 
   // Fetch stations from Supabase using st_map_data table
@@ -536,16 +765,25 @@ export const [StationsProvider, useStations] = createContextHook(() => {
 
       if (mappedFromStationData.length === 0) {
         console.log("No valid stations found, using mock data instead");
-        setStations(mockStations.slice(0, 5));
+        const processedMockStations = mockStations
+          .slice(0, 5)
+          .map(processStationWithRecharge);
+        setStations(processedMockStations);
       } else {
-        setStations(mappedFromStationData);
+        const processedStations = mappedFromStationData.map(
+          processStationWithRecharge
+        );
+        setStations(processedStations);
       }
     } catch (err: any) {
       console.log("Supabase fetch error:", err);
       setStationsError(err?.message || "Failed to load stations");
       // Fallback to mock stations if database fails
       console.log("Falling back to mock stations");
-      setStations(mockStations.slice(0, 5)); // Use first 5 mock stations as fallback
+      const processedMockStations = mockStations
+        .slice(0, 5)
+        .map(processStationWithRecharge);
+      setStations(processedMockStations); // Use first 5 mock stations as fallback
     } finally {
       setIsLoadingStations(false);
     }
@@ -643,16 +881,107 @@ export const [StationsProvider, useStations] = createContextHook(() => {
     return sorted.slice(0, 6);
   }, [stations, userLocation]);
 
+  // Generate location-based alerts
+  const generateLocationBasedAlerts = useCallback(
+    (stations: Station[], location: LocationData | null): Alert[] => {
+      const alerts: Alert[] = [];
+      const now = new Date();
+
+      if (!stations || stations.length === 0) return alerts;
+
+      // If no location, use first few stations for demo alerts
+      const stationsToAnalyze = location
+        ? stations.filter((station) => {
+            const distance = calculateDistance(
+              location.latitude,
+              location.longitude,
+              station.latitude,
+              station.longitude
+            );
+            return distance <= 50; // Within 50km
+          })
+        : stations.slice(0, 4); // Use first 4 stations if no location
+
+      stationsToAnalyze.forEach((station, index) => {
+        let distance = 0;
+        if (location) {
+          distance = calculateDistance(
+            location.latitude,
+            location.longitude,
+            station.latitude,
+            station.longitude
+          );
+        }
+
+        const distanceText = location
+          ? `${distance.toFixed(1)}km away`
+          : "in your region";
+
+        // Generate different types of alerts based on water level
+        if (station.currentLevel > 20) {
+          alerts.push({
+            id: `alert-${station.id}-${index}`,
+            stationId: station.id,
+            stationName: station.name,
+            type: "critical",
+            title: "High Water Level Alert",
+            description: `Water level at ${station.name} is ${station.currentLevel}m (${distanceText})`,
+            timestamp: new Date(
+              now.getTime() - Math.random() * 2 * 60 * 60 * 1000
+            ).toISOString(),
+            isRead: false,
+          });
+        } else if (station.currentLevel >= 15 && station.currentLevel <= 20) {
+          alerts.push({
+            id: `alert-${station.id}-${index}`,
+            stationId: station.id,
+            stationName: station.name,
+            type: "warning",
+            title: "Moderate Water Level",
+            description: `Water level declining at ${station.name}: ${station.currentLevel}m (${distanceText})`,
+            timestamp: new Date(
+              now.getTime() - Math.random() * 4 * 60 * 60 * 1000
+            ).toISOString(),
+            isRead: false,
+          });
+        } else if (station.currentLevel < 10) {
+          alerts.push({
+            id: `alert-${station.id}-${index}`,
+            stationId: station.id,
+            stationName: station.name,
+            type: "info",
+            title: "Good Recharge Detected",
+            description: `Positive recharge at ${station.name}: ${station.currentLevel}m (${distanceText})`,
+            timestamp: new Date(
+              now.getTime() - Math.random() * 6 * 60 * 60 * 1000
+            ).toISOString(),
+            isRead: false,
+          });
+        }
+      });
+
+      // Limit to avoid overwhelming user
+      return alerts.slice(0, 8);
+    },
+    []
+  );
+
+  // Generate dynamic alerts when nearby stations or location changes
+  useEffect(() => {
+    const newAlerts = generateLocationBasedAlerts(nearbyStations, userLocation);
+    setDynamicAlerts(newAlerts);
+  }, [nearbyStations, userLocation, generateLocationBasedAlerts]);
+
   // Estimated groundwater level at user's live location via IDW (k-nearest)
   const estimatedLevel = useMemo(() => {
-    if (!userLocation) return null as number | null;
+    if (!userLocation) return null;
     const candidates = stations.filter(
       (s) =>
         Number.isFinite(s.currentLevel) &&
         Number.isFinite(s.latitude) &&
         Number.isFinite(s.longitude)
     );
-    if (candidates.length === 0) return null as number | null;
+    if (candidates.length === 0) return null;
 
     // Compute distances
     const withDistance = candidates.map((s) => ({
@@ -685,7 +1014,7 @@ export const [StationsProvider, useStations] = createContextHook(() => {
       numerator += item.station.currentLevel * w;
       denominator += w;
     }
-    if (denominator === 0) return null as number | null;
+    if (denominator === 0) return null;
     return numerator / denominator;
   }, [stations, userLocation]);
 
@@ -796,10 +1125,10 @@ export const [StationsProvider, useStations] = createContextHook(() => {
     };
   }, [stations, nearbyStations]);
 
-  return useMemo(
+  const contextValue = useMemo(
     () => ({
       stations,
-      alerts,
+      alerts: dynamicAlerts,
       nearbyStations,
       estimatedLevel,
       userLocation,
@@ -815,8 +1144,9 @@ export const [StationsProvider, useStations] = createContextHook(() => {
     }),
     [
       stations,
-      alerts,
+      dynamicAlerts,
       nearbyStations,
+      estimatedLevel,
       userLocation,
       locationPermission,
       isLoadingLocation,
@@ -829,4 +1159,10 @@ export const [StationsProvider, useStations] = createContextHook(() => {
       requestLocationPermission,
     ]
   );
-});
+
+  return (
+    <StationsContext.Provider value={contextValue}>
+      {children}
+    </StationsContext.Provider>
+  );
+};

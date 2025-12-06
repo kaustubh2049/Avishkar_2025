@@ -1,7 +1,13 @@
 import { supabase } from "@/lib/supabase";
-import createContextHook from "@nkzw/create-context-hook";
 import * as Linking from "expo-linking";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 export type UserType = "farmer" | "analyst";
 
@@ -13,7 +19,38 @@ export interface User {
   userType: UserType;
 }
 
-export const [AuthProvider, useAuth] = createContextHook(() => {
+// Context type definition
+interface AuthContextType {
+  user: User | null;
+  isLoading: boolean;
+  signup: (
+    email: string,
+    password: string,
+    name: string,
+    organization: string,
+    userType: UserType
+  ) => Promise<any>;
+  login: (email: string, password: string) => Promise<any>;
+  logout: () => Promise<void>;
+  getUserType: () => UserType | null;
+}
+
+// Create context
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Custom hook to use context
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+};
+
+// Provider component
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
@@ -152,11 +189,11 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
     setUser(null);
   }, []);
 
-  const getUserType = (user: any): UserType => {
-    return user?.user_metadata?.user_type || "analyst"; // Default to analyst if not set
-  };
+  const getUserType = useCallback((): UserType | null => {
+    return user?.userType || null;
+  }, [user]);
 
-  return useMemo(
+  const contextValue = useMemo(
     () => ({
       user,
       isLoading,
@@ -173,6 +210,10 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
       logout,
       getUserType,
     }),
-    [user, isLoading, login, signup, logout]
+    [user, isLoading, login, signup, logout, getUserType]
   );
-});
+
+  return (
+    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
+  );
+};

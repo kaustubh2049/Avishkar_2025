@@ -13,9 +13,31 @@ export function RechargeTab({ station }: RechargeTabProps) {
   const chartWidth = width - 120;
   const chartHeight = 120;
 
-  const maxRecharge = Math.max(...station.rechargeData.map(d => d.amount));
-  const totalRecharge = station.rechargeData.reduce((sum, d) => sum + d.amount, 0);
-  const avgRecharge = totalRecharge / station.rechargeData.length;
+  const maxRecharge = Math.max(...station.rechargeData.map((d) => d.amount), 1);
+  const totalRecharge = station.rechargeData.reduce(
+    (sum, d) => sum + d.amount,
+    0
+  );
+  const avgRecharge = totalRecharge / Math.max(station.rechargeData.length, 1);
+
+  // Calculate water level changes for demonstration
+  const waterLevelChanges =
+    station.recentReadings.length >= 2
+      ? station.recentReadings
+          .slice(1)
+          .map((reading, index) => {
+            const prevReading = station.recentReadings[index];
+            return {
+              date: reading.timestamp.split("T")[0],
+              deltaH: reading.level - prevReading.level,
+              calculated:
+                station.specificYield *
+                Math.max(0, reading.level - prevReading.level) *
+                1000,
+            };
+          })
+          .filter((change) => change.deltaH > 0)
+      : [];
 
   return (
     <View style={styles.container}>
@@ -27,7 +49,9 @@ export function RechargeTab({ station }: RechargeTabProps) {
         <View style={styles.summaryStats}>
           <View style={styles.summaryItem}>
             <Text style={styles.summaryLabel}>Total (5 days)</Text>
-            <Text style={styles.summaryValue}>{totalRecharge.toFixed(1)} mm</Text>
+            <Text style={styles.summaryValue}>
+              {totalRecharge.toFixed(1)} mm
+            </Text>
           </View>
           <View style={styles.summaryItem}>
             <Text style={styles.summaryLabel}>Average</Text>
@@ -44,8 +68,10 @@ export function RechargeTab({ station }: RechargeTabProps) {
         <Text style={styles.chartTitle}>Daily Recharge (mm)</Text>
         <Svg width={chartWidth} height={chartHeight + 40} style={styles.chart}>
           {station.rechargeData.map((item, index) => {
-            const barWidth = (chartWidth - 40) / station.rechargeData.length - 8;
-            const barHeight = (item.amount / maxRecharge) * chartHeight;
+            const barWidth =
+              (chartWidth - 40) / station.rechargeData.length - 8;
+            const barHeight =
+              (item.amount / Math.max(maxRecharge, 1)) * chartHeight;
             const x = 20 + index * (barWidth + 8);
             const y = chartHeight - barHeight;
 
@@ -88,14 +114,31 @@ export function RechargeTab({ station }: RechargeTabProps) {
         <Text style={styles.methodText}>
           Recharge is calculated using the Water Table Fluctuation (WTF) method:
         </Text>
-        <Text style={styles.methodFormula}>
-          R = Sy × ΔH
-        </Text>
+        <Text style={styles.methodFormula}>R = Sy × ΔH</Text>
         <View style={styles.methodParams}>
           <Text style={styles.methodParam}>R = Groundwater recharge (mm)</Text>
-          <Text style={styles.methodParam}>Sy = Specific yield ({station.specificYield})</Text>
+          <Text style={styles.methodParam}>
+            Sy = Specific yield ({station.specificYield})
+          </Text>
           <Text style={styles.methodParam}>ΔH = Water level rise (m)</Text>
         </View>
+
+        {waterLevelChanges.length > 0 && (
+          <View style={styles.calculationDetails}>
+            <Text style={styles.calculationTitle}>Recent Calculations:</Text>
+            {waterLevelChanges.slice(0, 3).map((change, index) => (
+              <View key={index} style={styles.calculationRow}>
+                <Text style={styles.calculationText}>
+                  {change.date}: ΔH = {change.deltaH.toFixed(3)}m
+                </Text>
+                <Text style={styles.calculationResult}>
+                  R = {station.specificYield} × {change.deltaH.toFixed(3)} ={" "}
+                  {change.calculated.toFixed(1)} mm
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
       </View>
     </View>
   );
@@ -190,5 +233,31 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: "#64748b",
     fontFamily: "monospace",
+  },
+  calculationDetails: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#e2e8f0",
+  },
+  calculationTitle: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#1e293b",
+    marginBottom: 8,
+  },
+  calculationRow: {
+    marginBottom: 6,
+  },
+  calculationText: {
+    fontSize: 10,
+    color: "#64748b",
+    fontFamily: "monospace",
+  },
+  calculationResult: {
+    fontSize: 10,
+    color: "#0891b2",
+    fontFamily: "monospace",
+    fontWeight: "600",
   },
 });

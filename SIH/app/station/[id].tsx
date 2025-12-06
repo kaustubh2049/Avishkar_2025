@@ -48,12 +48,6 @@ function StationDetailContent() {
     }
   };
 
-  const getAvailabilityColor = (index: number) => {
-    if (index >= 0.7) return "#059669";
-    if (index >= 0.4) return "#ea580c";
-    return "#dc2626";
-  };
-
   const tabs = [
     { key: "trends" as const, label: "Trends" },
     { key: "recharge" as const, label: "Recharge" },
@@ -137,31 +131,6 @@ function StationDetailContent() {
               <Text style={styles.statusBadgeText}>
                 {station.status.toUpperCase()}
               </Text>
-            </View>
-          </View>
-
-          <View style={styles.metricCard}>
-            <Text style={styles.metricLabel}>Groundwater Availability</Text>
-            <View style={styles.availabilityContainer}>
-              <View
-                style={[
-                  styles.availabilityDial,
-                  {
-                    borderColor: getAvailabilityColor(
-                      station.availabilityIndex
-                    ),
-                  },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.availabilityValue,
-                    { color: getAvailabilityColor(station.availabilityIndex) },
-                  ]}
-                >
-                  {(station.availabilityIndex * 100).toFixed(0)}%
-                </Text>
-              </View>
             </View>
           </View>
         </View>
@@ -342,22 +311,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
     color: "white",
-  },
-  availabilityContainer: {
-    alignItems: "center",
-  },
-  availabilityDial: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    borderWidth: 4,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#f8fafc",
-  },
-  availabilityValue: {
-    fontSize: 14,
-    fontWeight: "bold",
   },
   tabsContainer: {
     backgroundColor: "white",

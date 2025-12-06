@@ -1,6 +1,6 @@
 import { AlertCard } from "@/components/alert-card";
 import { StationsProvider, useStations } from "@/providers/stations-provider";
-import { Bell, Filter } from "lucide-react-native";
+import { Bell, Filter, MapPin, RefreshCw } from "lucide-react-native";
 import React, { useState } from "react";
 import {
   ScrollView,
@@ -12,19 +12,33 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 function AlertsScreenContent() {
-  const { alerts } = useStations();
-  const [selectedFilter, setSelectedFilter] = useState<"all" | "critical" | "warning" | "info">("all");
+  const { alerts, userLocation, nearbyStations } = useStations();
+  const [selectedFilter, setSelectedFilter] = useState<
+    "all" | "critical" | "warning" | "info"
+  >("all");
   const insets = useSafeAreaInsets();
 
-  const filteredAlerts = alerts.filter(alert => 
-    selectedFilter === "all" || alert.type === selectedFilter
+  const filteredAlerts = alerts.filter(
+    (alert) => selectedFilter === "all" || alert.type === selectedFilter
   );
 
   const filterOptions = [
     { key: "all" as const, label: "All", count: alerts.length },
-    { key: "critical" as const, label: "Critical", count: alerts.filter(a => a.type === "critical").length },
-    { key: "warning" as const, label: "Warning", count: alerts.filter(a => a.type === "warning").length },
-    { key: "info" as const, label: "Info", count: alerts.filter(a => a.type === "info").length },
+    {
+      key: "critical" as const,
+      label: "Critical",
+      count: alerts.filter((a) => a.type === "critical").length,
+    },
+    {
+      key: "warning" as const,
+      label: "Warning",
+      count: alerts.filter((a) => a.type === "warning").length,
+    },
+    {
+      key: "info" as const,
+      label: "Info",
+      count: alerts.filter((a) => a.type === "info").length,
+    },
   ];
 
   return (
@@ -32,19 +46,33 @@ function AlertsScreenContent() {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Text style={styles.headerTitle}>Alerts & Notifications</Text>
-          <Text style={styles.headerSubtitle}>{filteredAlerts.length} active alerts</Text>
+          <Text style={styles.headerTitle}>Location-Based Alerts</Text>
+          <View style={styles.locationInfo}>
+            <MapPin size={14} color="#64748b" />
+            <Text style={styles.headerSubtitle}>
+              {userLocation
+                ? `${filteredAlerts.length} alerts from ${nearbyStations.length} nearby stations`
+                : `${filteredAlerts.length} general alerts`}
+            </Text>
+          </View>
         </View>
         <View style={styles.headerRight}>
           <TouchableOpacity style={styles.headerButton}>
-            <Filter size={24} color="#64748b" />
+            <RefreshCw size={20} color="#64748b" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.headerButton}>
+            <Filter size={20} color="#64748b" />
           </TouchableOpacity>
         </View>
       </View>
 
       {/* Filter Tabs */}
       <View style={styles.filterContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScrollView}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterScrollView}
+        >
           {filterOptions.map((option) => (
             <TouchableOpacity
               key={option.key}
@@ -57,20 +85,26 @@ function AlertsScreenContent() {
               <Text
                 style={[
                   styles.filterButtonText,
-                  selectedFilter === option.key && styles.filterButtonTextActive,
+                  selectedFilter === option.key &&
+                    styles.filterButtonTextActive,
                 ]}
               >
                 {option.label}
               </Text>
               {option.count > 0 && (
-                <View style={[
-                  styles.filterBadge,
-                  selectedFilter === option.key && styles.filterBadgeActive,
-                ]}>
-                  <Text style={[
-                    styles.filterBadgeText,
-                    selectedFilter === option.key && styles.filterBadgeTextActive,
-                  ]}>
+                <View
+                  style={[
+                    styles.filterBadge,
+                    selectedFilter === option.key && styles.filterBadgeActive,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.filterBadgeText,
+                      selectedFilter === option.key &&
+                        styles.filterBadgeTextActive,
+                    ]}
+                  >
                     {option.count}
                   </Text>
                 </View>
@@ -81,13 +115,18 @@ function AlertsScreenContent() {
       </View>
 
       {/* Alerts List */}
-      <ScrollView style={styles.alertsList} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.alertsList}
+        showsVerticalScrollIndicator={false}
+      >
         {filteredAlerts.length === 0 ? (
           <View style={styles.emptyState}>
             <Bell size={48} color="#cbd5e1" />
-            <Text style={styles.emptyStateTitle}>No alerts found</Text>
+            <Text style={styles.emptyStateTitle}>No alerts in your area</Text>
             <Text style={styles.emptyStateSubtitle}>
-              All stations are operating normally
+              {userLocation
+                ? "All nearby groundwater stations are operating normally"
+                : "Enable location to see area-specific alerts"}
             </Text>
           </View>
         ) : (
@@ -135,6 +174,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#64748b",
     marginTop: 2,
+  },
+  locationInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 4,
+    gap: 4,
   },
   headerRight: {
     flexDirection: "row",

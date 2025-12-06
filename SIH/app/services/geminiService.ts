@@ -2,7 +2,8 @@
 // Combines Local ML Model + Gemini AI for maximum accuracy
 
 const GEMINI_API_KEY = "AIzaSyB-XQxFCptfz783oykllMTCYfUYFO18ZHU";
-const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+const GEMINI_API_URL =
+  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
 const LOCAL_MODEL_API = "http://192.168.0.103:9000"; // Your Flask backend
 
 export interface DiseaseAnalysisResult {
@@ -40,7 +41,9 @@ export const analyzeImageHybrid = async (
     // Use Gemini AI directly (more reliable than local model)
     const geminiResult = await analyzeImageWithGemini(base64Image, imageType);
 
-    console.log(`✅ Analysis complete: ${geminiResult.disease} (${geminiResult.confidence}%)`);
+    console.log(
+      `✅ Analysis complete: ${geminiResult.disease} (${geminiResult.confidence}%)`
+    );
     return geminiResult;
   } catch (error) {
     console.error("❌ Analysis error:", error);
@@ -74,7 +77,9 @@ export const analyzeImageWithLocalModel = async (
     }
 
     const data = await response.json();
-    console.log(`✅ Local Model Result: ${data.prediction} (${data.confidence}%)`);
+    console.log(
+      `✅ Local Model Result: ${data.prediction} (${data.confidence}%)`
+    );
 
     return {
       prediction: data.prediction || "Unknown",
@@ -101,12 +106,19 @@ const combineResults = (
 
   // If both agree on disease (similar names), boost confidence
   const diseaseSimilar =
-    localResult.prediction.toLowerCase().includes(geminiResult.disease.toLowerCase()) ||
-    geminiResult.disease.toLowerCase().includes(localResult.prediction.toLowerCase());
+    localResult.prediction
+      .toLowerCase()
+      .includes(geminiResult.disease.toLowerCase()) ||
+    geminiResult.disease
+      .toLowerCase()
+      .includes(localResult.prediction.toLowerCase());
 
   if (diseaseSimilar) {
     console.log("✅ Both models agree! Boosting confidence...");
-    const boostedConfidence = Math.min(100, (localConfidence + geminiConfidence) / 2 + 5);
+    const boostedConfidence = Math.min(
+      100,
+      (localConfidence + geminiConfidence) / 2 + 5
+    );
     return {
       ...geminiResult,
       confidence: Math.round(boostedConfidence),
@@ -138,22 +150,60 @@ const combineResults = (
 /**
  * Converts Local Model result to standard format
  */
-const convertLocalToResult = (localResult: LocalModelResult): DiseaseAnalysisResult => {
-  const diseaseMap: { [key: string]: { severity: "Mild" | "Moderate" | "Severe"; treatment: string[]; prevention: string[] } } = {
+const convertLocalToResult = (
+  localResult: LocalModelResult
+): DiseaseAnalysisResult => {
+  const diseaseMap: {
+    [key: string]: {
+      severity: "Mild" | "Moderate" | "Severe";
+      treatment: string[];
+      prevention: string[];
+    };
+  } = {
     healthy: {
       severity: "Mild",
-      treatment: ["Plant is healthy", "Continue regular care", "Monitor for any changes", "Maintain good hygiene"],
-      prevention: ["Keep watering schedule", "Ensure proper sunlight", "Check soil moisture", "Inspect regularly"],
+      treatment: [
+        "Plant is healthy",
+        "Continue regular care",
+        "Monitor for any changes",
+        "Maintain good hygiene",
+      ],
+      prevention: [
+        "Keep watering schedule",
+        "Ensure proper sunlight",
+        "Check soil moisture",
+        "Inspect regularly",
+      ],
     },
     powdery: {
       severity: "Moderate",
-      treatment: ["Apply sulfur-based fungicide", "Increase air circulation", "Remove infected leaves", "Spray every 7-10 days"],
-      prevention: ["Avoid overhead watering", "Space plants properly", "Monitor humidity levels", "Use resistant varieties"],
+      treatment: [
+        "Apply sulfur-based fungicide",
+        "Increase air circulation",
+        "Remove infected leaves",
+        "Spray every 7-10 days",
+      ],
+      prevention: [
+        "Avoid overhead watering",
+        "Space plants properly",
+        "Monitor humidity levels",
+        "Use resistant varieties",
+      ],
     },
     rust: {
       severity: "Moderate",
-      treatment: ["Apply copper fungicide", "Remove infected leaves", "Improve drainage", "Reduce leaf wetness"],
-      prevention: ["Ensure good air flow", "Water at base only", "Rotate crops", "Clean tools between plants"],
+      treatment: [
+        "Apply copper fungicide",
+        "Remove infected leaves",
+        "Improve drainage",
+        "Reduce leaf wetness",
+      ],
+      prevention: [
+        "Ensure good air flow",
+        "Water at base only",
+        "Rotate crops",
+        "Clean tools between plants",
+      ],
     },
   };
 
@@ -250,8 +300,7 @@ Be specific and accurate. If the plant appears healthy, set disease to "Healthy"
     console.log("📡 Gemini API response received");
 
     // Extract text from response
-    const responseText =
-      data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
     if (!responseText) {
       throw new Error("No response from Gemini AI");
@@ -281,7 +330,9 @@ Be specific and accurate. If the plant appears healthy, set disease to "Healthy"
       source: "gemini",
     };
 
-    console.log(`✅ Analysis complete: ${validatedResult.disease} (${validatedResult.confidence}%)`);
+    console.log(
+      `✅ Analysis complete: ${validatedResult.disease} (${validatedResult.confidence}%)`
+    );
 
     return validatedResult;
   } catch (error) {
@@ -317,9 +368,7 @@ export const imageUriToBase64 = async (uri: string): Promise<string> => {
 /**
  * Validates and normalizes severity level
  */
-const validateSeverity = (
-  severity: any
-): "Mild" | "Moderate" | "Severe" => {
+const validateSeverity = (severity: any): "Mild" | "Moderate" | "Severe" => {
   const validSeverities = ["Mild", "Moderate", "Severe"];
   if (validSeverities.includes(severity)) {
     return severity;
@@ -350,4 +399,13 @@ export const fallbackColorAnalysis = (): DiseaseAnalysisResult => {
     ],
     source: "fallback",
   };
+};
+
+// Default export for Expo Router compatibility
+export default {
+  analyzeImageHybrid,
+  analyzeImageWithLocalModel,
+  analyzeImageWithGemini,
+  imageUriToBase64,
+  fallbackColorAnalysis,
 };
