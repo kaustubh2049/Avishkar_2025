@@ -1,14 +1,19 @@
 import { AnalyticsCard } from "@/components/analytics-card";
 import { TrendChart } from "@/components/trend-chart";
-import { StationsProvider, useStations } from "@/providers/stations-provider";
+import {
+  DatabaseReading,
+  StationsProvider,
+  useStations,
+} from "@/providers/stations-provider";
 import { useRouter } from "expo-router";
 import {
   BarChart3,
   Download,
+  MapPin,
   TrendingDown,
   TrendingUp,
 } from "lucide-react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -19,10 +24,14 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 function AnalyticsScreenContent() {
-  const { stations, getAnalytics } = useStations();
+  const { stations, getAnalytics, getStationReadings } = useStations();
   const [selectedTimeframe, setSelectedTimeframe] = useState<
     "6m" | "1y" | "2y"
   >("6m");
+  const [averageChartData, setAverageChartData] = useState<
+    { x: number; y: number; label: string }[]
+  >([]);
+  const [isLoadingChart, setIsLoadingChart] = useState(true);
   const analytics = getAnalytics();
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -32,6 +41,73 @@ function AnalyticsScreenContent() {
     { key: "1y" as const, label: "1 Year" },
     { key: "2y" as const, label: "2 Years" },
   ];
+
+  // Fetch readings for nearby stations and calculate averages
+  useEffect(() => {
+    const fetchAverageData = async () => {
+      if (analytics.nearbyStations.length === 0) {
+        setIsLoadingChart(false);
+        return;
+      }
+
+      try {
+        setIsLoadingChart(true);
+
+        // Fetch readings for all nearby stations
+        const allReadingsPromises = analytics.nearbyStations.map((station) =>
+          getStationReadings(
+            station.latitude,
+            station.longitude,
+            selectedTimeframe
+          )
+        );
+
+        const allStationReadings = await Promise.all(allReadingsPromises);
+
+        // Calculate reading counts based on timeframe
+        const readingCounts = {
+          "6m": 12,
+          "1y": 24,
+          "2y": 48,
+        };
+        const maxReadings = readingCounts[selectedTimeframe];
+
+        // Create averaged data points
+        const averagedData: { x: number; y: number; label: string }[] = [];
+
+        for (let i = 0; i < maxReadings; i++) {
+          const readingsAtIndex: number[] = [];
+
+          // Get water level at index i from each station (if exists)
+          allStationReadings.forEach((stationReadings) => {
+            if (stationReadings[i] && stationReadings[i].Water_Level) {
+              readingsAtIndex.push(stationReadings[i].Water_Level);
+            }
+          });
+
+          // Calculate average if we have readings
+          if (readingsAtIndex.length > 0) {
+            const avgLevel =
+              readingsAtIndex.reduce((sum, level) => sum + level, 0) /
+              readingsAtIndex.length;
+            averagedData.push({
+              x: i,
+              y: avgLevel,
+              label: `R${i + 1}`,
+            });
+          }
+        }
+
+        setAverageChartData(averagedData);
+      } catch (error) {
+        console.error("Error fetching average chart data:", error);
+      } finally {
+        setIsLoadingChart(false);
+      }
+    };
+
+    fetchAverageData();
+  }, [analytics.nearbyStations, selectedTimeframe, getStationReadings]);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -77,10 +153,10 @@ function AnalyticsScreenContent() {
         {/* Key Metrics */}
         <View style={styles.metricsGrid}>
           <AnalyticsCard
-            title="Total Stations"
-            value={stations.length.toString()}
-            icon={<BarChart3 size={20} color="#0891b2" />}
-            trend={{ value: 5, isPositive: true }}
+            title="Nearby Stations"
+            value={analytics.nearbyStationCount.toString()}
+            icon={<MapPin size={20} color="#0891b2" />}
+            trend={{ value: analytics.nearbyStationCount, isPositive: true }}
             backgroundColor="#e0f2fe"
           />
           <AnalyticsCard
@@ -94,61 +170,38 @@ function AnalyticsScreenContent() {
             title="Recharge Events"
             value={analytics.rechargeEvents.toString()}
             icon={<TrendingUp size={20} color="#059669" />}
-            trend={{ value: 12, isPositive: true }}
+            trend={{ value: analytics.rechargeEvents, isPositive: true }}
             backgroundColor="#f0fdf4"
           />
           <AnalyticsCard
             title="Critical Stations"
             value={analytics.criticalStations.toString()}
             icon={<TrendingDown size={20} color="#ea580c" />}
-            trend={{ value: 3, isPositive: false }}
+            trend={{ value: analytics.criticalStations, isPositive: false }}
             backgroundColor="#fff7ed"
           />
-        </View>
-        {/* Future Prediction Button with modern UI */}
-        <View style={{ alignItems: "center", marginVertical: 5 }}>
-          <TouchableOpacity
-            onPress={() => {
-              router.push("/future-prediction");
-            }}
-            activeOpacity={0.85}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              backgroundColor: "#1d4ed8",
-              paddingVertical: 14,
-              paddingHorizontal: 28,
-              borderRadius: 32,
-              shadowColor: "#1e293b",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1,
-              shadowRadius: 8,
-              elevation: 4,
-            }}
-          >
-            <BarChart3 size={20} color="#fff" style={{ marginRight: 10 }} />
-            <Text
-              style={{
-                color: "#fff",
-                fontWeight: "700",
-                fontSize: 16,
-                letterSpacing: 0.2,
-              }}
-            >
-              Future Prediction Details
-            </Text>
-          </TouchableOpacity>
         </View>
 
         {/* Trend Chart */}
         <View style={styles.chartContainer}>
           <View style={styles.chartHeader}>
-            <Text style={styles.chartTitle}>Groundwater Trend</Text>
+            <Text style={styles.chartTitle}>Nearby Stations Trend</Text>
             <Text style={styles.chartSubtitle}>
-              Average water level across all stations
+              Average water level across {analytics.nearbyStationCount} nearest
+              stations
             </Text>
           </View>
-          <TrendChart timeframe={selectedTimeframe} />
+          {isLoadingChart ? (
+            <View style={styles.loadingContainer}>
+              <Text style={styles.loadingText}>Loading chart data...</Text>
+            </View>
+          ) : (
+            <TrendChart
+              timeframe={selectedTimeframe}
+              customData={averageChartData}
+              showNearbyStations={true}
+            />
+          )}
         </View>
 
         {/* Regional Analysis */}
@@ -307,6 +360,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#64748b",
     marginTop: 4,
+  },
+  loadingContainer: {
+    height: 180,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f8fafc",
+    borderRadius: 8,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: "#64748b",
   },
   regionalContainer: {
     paddingHorizontal: 20,

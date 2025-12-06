@@ -754,11 +754,30 @@ export const [StationsProvider, useStations] = createContextHook(() => {
   );
 
   const getAnalytics = useCallback(() => {
+    // Use nearby stations instead of all stations for proximity-based analytics
+    const relevantStations =
+      nearbyStations.length > 0 ? nearbyStations : stations.slice(0, 6);
+
     const avgWaterLevel =
-      stations.reduce((sum, station) => sum + station.currentLevel, 0) /
-      stations.length;
-    const rechargeEvents = 42;
-    const criticalStations = 3;
+      relevantStations.length > 0
+        ? relevantStations.reduce(
+            (sum, station) => sum + station.currentLevel,
+            0
+          ) / relevantStations.length
+        : 0;
+
+    // Calculate recharge events from nearby stations (mock for now, can be enhanced)
+    const rechargeEvents = relevantStations.filter(
+      (station) =>
+        station.recentReadings.length > 1 &&
+        station.recentReadings[station.recentReadings.length - 1].level >
+          station.recentReadings[0].level
+    ).length;
+
+    // Count critical stations from nearby stations
+    const criticalStations = relevantStations.filter(
+      (station) => station.status === "critical"
+    ).length;
 
     const regionalData = [
       { state: "Pune", avgLevel: 16.2, status: "warning" as const },
@@ -768,12 +787,14 @@ export const [StationsProvider, useStations] = createContextHook(() => {
     ];
 
     return {
+      nearbyStationCount: relevantStations.length,
       avgWaterLevel,
       rechargeEvents,
       criticalStations,
+      nearbyStations: relevantStations,
       regionalData,
     };
-  }, [stations]);
+  }, [stations, nearbyStations]);
 
   return useMemo(
     () => ({
