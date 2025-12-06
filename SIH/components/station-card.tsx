@@ -1,5 +1,5 @@
 import { Station } from "@/providers/stations-provider";
-import { Battery, MapPin, Signal, TrendingDown, TrendingUp } from "lucide-react-native";
+import { MapPin, TrendingDown, TrendingUp } from "lucide-react-native";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
@@ -72,15 +72,6 @@ export function StationCard({ station, onPress }: StationCardProps) {
       </View>
 
       <View style={styles.footer}>
-        <View style={styles.statusIcons}>
-          <View style={styles.statusIcon}>
-            <Battery size={14} color={station.batteryLevel > 20 ? "#059669" : "#dc2626"} />
-            <Text style={styles.statusIconText}>{station.batteryLevel}%</Text>
-          </View>
-          <View style={styles.statusIcon}>
-            <Signal size={14} color={station.signalStrength > 50 ? "#059669" : "#ea580c"} />
-          </View>
-        </View>
         <Text style={styles.lastUpdated}>
           Updated {new Date(station.lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </Text>
@@ -175,22 +166,8 @@ const styles = StyleSheet.create({
   },
   footer: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "flex-end",
     alignItems: "center",
-  },
-  statusIcons: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  statusIcon: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  statusIconText: {
-    fontSize: 10,
-    color: "#64748b",
-    marginLeft: 4,
   },
   lastUpdated: {
     fontSize: 10,

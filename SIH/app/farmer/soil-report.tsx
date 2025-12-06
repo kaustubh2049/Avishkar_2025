@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Stack, useRouter } from "expo-router";
 import * as Location from "expo-location";
 import { FarmerHeader, AiFab } from "@/components/FarmerHeader";
 import { Sprout, AlertCircle, CheckCircle2 } from "lucide-react-native";
 
 export default function SoilReportScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const [district, setDistrict] = useState("");
   const [region, setRegion] = useState("");
@@ -15,6 +16,7 @@ export default function SoilReportScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [soilResult, setSoilResult] = useState<any | null>(null);
+  const [locationLoading, setLocationLoading] = useState(false);
 
   const mapStatusToLevel = (status: string | undefined): "good" | "medium" | "low" => {
     const s = (status || "").toLowerCase();
@@ -26,29 +28,38 @@ export default function SoilReportScreen() {
   const useCurrentLocation = async () => {
     try {
       setError(null);
+      setLocationLoading(true);
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
         setError("Location permission is required to use your current location.");
+        setLocationLoading(false);
         return;
       }
 
-      const loc = await Location.getCurrentPositionAsync({});
+      const loc = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
       const { latitude: lat, longitude: lon } = loc.coords;
       setLatitude(lat.toFixed(4));
       setLongitude(lon.toFixed(4));
 
-      try {
-        const geo = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lon });
-        if (geo[0]) {
-          const g = geo[0];
-          if (!district) setDistrict(g.subregion || g.city || g.district || "");
-          if (!region) setRegion(g.region || g.country || "");
+      // Run reverse geocoding in the background; coordinates are already available
+      (async () => {
+        try {
+          const geo = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lon });
+          if (geo[0]) {
+            const g = geo[0];
+            if (!district) setDistrict(g.subregion || g.city || g.district || "");
+            if (!region) setRegion(g.region || g.country || "");
+          }
+        } catch {
+          // ignore reverse geocode errors
         }
-      } catch {
-        // ignore reverse geocode errors
-      }
+      })();
     } catch {
       setError("Failed to get current location. Please try again.");
+    } finally {
+      setLocationLoading(false);
     }
   };
 
@@ -88,11 +99,11 @@ export default function SoilReportScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { paddingBottom: insets.bottom }]}>
       <Stack.Screen options={{ headerTitle: "Soil Health", headerBackTitle: "Home" }} />
       <FarmerHeader />
       <AiFab />
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.inputCard}>
           <Text style={styles.inputTitle}>Analyze your field soil</Text>
           <View style={styles.inputRow}>
@@ -132,9 +143,11 @@ export default function SoilReportScreen() {
           <TouchableOpacity
             style={[styles.analyzeButton, { backgroundColor: "#6366f1", marginTop: 4 }]}
             onPress={useCurrentLocation}
-            disabled={loading}
+            disabled={loading || locationLoading}
           >
-            <Text style={styles.analyzeButtonText}>Use My Location</Text>
+            <Text style={styles.analyzeButtonText}>
+              {locationLoading ? "Getting location..." : "Use My Location"}
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.analyzeButton}
@@ -161,21 +174,21 @@ export default function SoilReportScreen() {
           )}
         </View>
         
-        {/* Overall Score */}
-        <View style={styles.scoreCard}>
-          <View style={styles.scoreCircle}>
-            <Text style={styles.scoreValue}>{soilResult ? soilResult.score : 84}</Text>
-            <Text style={styles.scoreTotal}>/100</Text>
+        {/* Overall Score - only show after analysis */}
+        {soilResult && (
+          <View style={styles.scoreCard}>
+            <View style={styles.scoreCircle}>
+              <Text style={styles.scoreValue}>{soilResult.score}</Text>
+              <Text style={styles.scoreTotal}>/100</Text>
+            </View>
+            <View style={styles.scoreInfo}>
+              <Text style={styles.scoreTitle}>Soil Fertility Score</Text>
+              <Text style={styles.scoreSubtitle}>
+                {`N: ${soilResult.statuses.N}, P: ${soilResult.statuses.P}, K: ${soilResult.statuses.K}, pH: ${soilResult.statuses.pH}`}
+              </Text>
+            </View>
           </View>
-          <View style={styles.scoreInfo}>
-            <Text style={styles.scoreTitle}>Soil Fertility Score</Text>
-            <Text style={styles.scoreSubtitle}>
-              {soilResult
-                ? `N: ${soilResult.statuses.N}, P: ${soilResult.statuses.P}, K: ${soilResult.statuses.K}, pH: ${soilResult.statuses.pH}`
-                : "Your soil is healthy but needs some Nitrogen."}
-            </Text>
-          </View>
-        </View>
+        )}
 
         {/* Nutrient Grid */}
         <Text style={styles.sectionTitle}>Nutrient Status</Text>
@@ -195,8 +208,6 @@ export default function SoilReportScreen() {
             value={soilResult ? `${soilResult.K} (${soilResult.statuses.K})` : "High"}
             status={soilResult ? mapStatusToLevel(soilResult.statuses.K) : "good"}
           />
-          <NutrientCard name="Iron (Fe)" value="Good" status="good" />
-          <NutrientCard name="Zinc (Zn)" value="Medium" status="medium" />
           <NutrientCard
             name="pH Level"
             value={soilResult ? `${soilResult.pH} (${soilResult.statuses.pH})` : "6.5"}
@@ -230,6 +241,20 @@ export default function SoilReportScreen() {
           </View>
         </View>
 
+        {soilResult?.crop_recommendations && soilResult.crop_recommendations.length > 0 && (
+          <>
+            <Text style={styles.sectionTitle}>Best Crops for Your Soil</Text>
+            <View style={styles.cropList}>
+              {soilResult.crop_recommendations.slice(0, 3).map((item: any, index: number) => (
+                <View key={index} style={styles.cropCard}>
+                  <Text style={styles.cropName}>{item.name}</Text>
+                  <Text style={styles.cropScore}>{item.score.toFixed(1)}%</Text>
+                </View>
+              ))}
+            </View>
+          </>
+        )}
+
       </ScrollView>
     </SafeAreaView>
   );
@@ -258,6 +283,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 20,
+    paddingBottom: 80,
   },
   inputCard: {
     backgroundColor: "#fff",
@@ -310,8 +336,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 24,
     flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 24,
     elevation: 2,
   },
   scoreCircle: {
@@ -424,5 +448,30 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: "#e2e8f0",
     marginVertical: 16,
+  },
+  cropList: {
+    marginTop: 8,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+  },
+  cropCard: {
+    flexBasis: "48%",
+    backgroundColor: "#ecfdf5",
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#bbf7d0",
+  },
+  cropName: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#166534",
+    marginBottom: 4,
+  },
+  cropScore: {
+    fontSize: 13,
+    color: "#16a34a",
+    fontWeight: "500",
   },
 });

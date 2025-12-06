@@ -51,9 +51,61 @@ export function StationMap({ stations, userLocation, onStationPress, activeLayer
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 <style>
   html, body, #map { height: 100%; margin: 0; }
-  .callout-title { font-weight: 600; font-size: 14px; color: #1e293b; }
-  .callout-sub { font-size: 12px; color: #64748b; margin-top: 2px; }
-  .callout-meta { font-size: 12px; color: #0891b2; margin-top: 6px; }
+  
+  /* Smooth transitions */
+  .leaflet-marker-icon {
+    transition: transform 0.2s ease-in-out, filter 0.2s ease-in-out !important;
+  }
+  
+  .leaflet-marker-icon:hover {
+    transform: scale(1.15);
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.25));
+  }
+  
+  /* Popup styling */
+  .leaflet-popup-content-wrapper {
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    border: none;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  }
+  
+  .leaflet-popup-tip {
+    background: #ffffff;
+  }
+  
+  .callout-title { 
+    font-weight: 700; 
+    font-size: 14px; 
+    color: #1e293b;
+    margin-bottom: 4px;
+  }
+  
+  .callout-sub { 
+    font-size: 12px; 
+    color: #64748b; 
+    margin-top: 2px;
+    font-weight: 500;
+  }
+  
+  .callout-meta { 
+    font-size: 12px; 
+    color: #0891b2; 
+    margin-top: 6px;
+    padding: 4px 0;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 8px;
+  }
+  
+  .callout-meta:first-of-type {
+    border-top: none;
+    padding-top: 4px;
+  }
+  
+  /* Smooth map transitions */
+  .leaflet-container {
+    background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%);
+  }
 </style>
 </head>
 <body>
@@ -133,16 +185,41 @@ function stationPopupHtml(s) {
 // User marker
 if (data.user) {
   const userIcon = L.icon({
-    iconUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="%230891b2"><path d="M12 2C8.686 2 6 4.686 6 8c0 5.25 6 14 6 14s6-8.75 6-14c0-3.314-2.686-6-6-6zm0 8.5c-1.379 0-2.5-1.121-2.5-2.5S10.621 5.5 12 5.5s2.5 1.121 2.5 2.5S13.379 10.5 12 10.5z"/></svg>',
-    iconSize: [24, 24], iconAnchor: [12, 24]
+    iconUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="%230891b2"><circle cx="12" cy="12" r="8" fill="%230891b2"/><circle cx="12" cy="12" r="5" fill="white"/></svg>',
+    iconSize: [48, 48], iconAnchor: [24, 24]
   });
-  L.marker([data.user.lat, data.user.lng], { icon: userIcon }).addTo(map).bindPopup('You');
+  L.marker([data.user.lat, data.user.lng], { icon: userIcon }).addTo(map).bindPopup('Your Location');
+  // Auto-zoom to user location
+  map.setView([data.user.lat, data.user.lng], 12);
+}
+
+// Function to get marker color based on water level
+function getMarkerColor(level) {
+  // Thresholds for water level status
+  // Green: < 3.5m (good water level)
+  // Yellow: 3.5m - 8m (moderate water level)
+  // Red: > 8m (critical water level)
+  if (level < 3.5) return '#22c55e'; // Green
+  if (level <= 8) return '#eab308';  // Yellow
+  return '#ef4444'; // Red
+}
+
+// Function to create colored marker icon
+function createColoredMarker(color) {
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="' + color + '"><path d="M12 2C8.686 2 6 4.686 6 8c0 5.25 6 14 6 14s6-8.75 6-14c0-3.314-2.686-6-6-6zm0 8.5c-1.379 0-2.5-1.121-2.5-2.5S10.621 5.5 12 5.5s2.5 1.121 2.5 2.5S13.379 10.5 12 10.5z"/></svg>';
+  return L.icon({
+    iconUrl: 'data:image/svg+xml;utf8,' + encodeURIComponent(svg),
+    iconSize: [24, 24],
+    iconAnchor: [12, 24]
+  });
 }
 
 // Station markers
 const markers = [];
 (data.stations || []).forEach(s => {
-  const m = L.marker([s.lat, s.lng]).addTo(map).bindPopup(stationPopupHtml(s));
+  const color = getMarkerColor(s.currentLevel);
+  const icon = createColoredMarker(color);
+  const m = L.marker([s.lat, s.lng], { icon: icon }).addTo(map).bindPopup(stationPopupHtml(s));
   m.on('click', () => {
     RN && RN.postMessage(JSON.stringify({ type: 'stationTap', id: s.id }));
   });

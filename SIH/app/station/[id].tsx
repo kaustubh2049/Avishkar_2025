@@ -4,7 +4,7 @@ import { TrendsTab } from "@/components/trends-tab";
 import { WaterLevelChart } from "@/components/water-level-chart";
 import { useStations } from "@/providers/stations-provider";
 import { router, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, Battery, Signal } from "lucide-react-native";
+import { ArrowLeft } from "lucide-react-native";
 import React, { useState } from "react";
 import {
   ScrollView,
@@ -81,21 +81,6 @@ function StationDetailContent() {
           <Text style={styles.stationLocation}>
             {station.district}, {station.state}
           </Text>
-        </View>
-        <View style={styles.statusIcons}>
-          <View style={styles.statusIcon}>
-            <Battery
-              size={16}
-              color={station.batteryLevel > 20 ? "#059669" : "#dc2626"}
-            />
-            <Text style={styles.statusText}>{station.batteryLevel}%</Text>
-          </View>
-          <View style={styles.statusIcon}>
-            <Signal
-              size={16}
-              color={station.signalStrength > 50 ? "#059669" : "#ea580c"}
-            />
-          </View>
         </View>
       </View>
 

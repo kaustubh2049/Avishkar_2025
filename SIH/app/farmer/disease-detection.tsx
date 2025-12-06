@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, useWindowDimensio
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Stack } from "expo-router";
-import { Camera, Upload, AlertTriangle, CheckCircle, Zap, MapPin, ExternalLink } from "lucide-react-native";
+import { Camera, Upload, AlertTriangle, CheckCircle, Zap, MapPin, ExternalLink, Leaf } from "lucide-react-native";
 import { FarmerHeader, AiFab } from "@/components/FarmerHeader";
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
@@ -259,7 +259,7 @@ export default function DiseaseDetectionScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { paddingBottom: insets.bottom }]}>
       <Stack.Screen options={{ headerTitle: "Scan Crop", headerBackTitle: "Home" }} />
       <FarmerHeader />
       <AiFab />
@@ -267,11 +267,18 @@ export default function DiseaseDetectionScreen() {
         <ScrollView
           contentContainerStyle={[
             styles.scrollContent,
-            { paddingBottom: 20 + keyboardPadding + insets.bottom },
+            { paddingBottom: 100 + keyboardPadding + insets.bottom },
           ]}
         >
-          <View style={styles.headerRow}>
-            <PageHeader title="AI Plant Doctor" subtitle="Advanced Disease Detection" />
+          {/* Hero Section */}
+          <View style={styles.heroSection}>
+            <View style={styles.heroContent}>
+              <View style={styles.heroIconBg}>
+                <Leaf size={28} color="#3BC47E" />
+              </View>
+              <Text style={styles.heroTitle}>AI Plant Doctor</Text>
+              <Text style={styles.heroSubtitle}>Advanced Disease Detection</Text>
+            </View>
           </View>
           <View style={{ flexDirection: isLandscape ? "row" : "column", gap: 16 }}>
             {/* Upload Area */}
@@ -281,10 +288,10 @@ export default function DiseaseDetectionScreen() {
               ) : (
                 <>
                   <View style={styles.iconContainer}>
-                    <Camera size={48} color="#94a3b8" />
+                    <Camera size={48} color="#1A73E8" />
                   </View>
-                  <Text style={styles.uploadTitle}>Take a Photo or Upload</Text>
-                  <Text style={styles.uploadSubtitle}>Align the leaf within the frame. Ensure good lighting.</Text>
+                  <Text style={styles.uploadTitle}>Capture or Upload</Text>
+                  <Text style={styles.uploadSubtitle}>Position the affected leaf clearly. Good lighting helps accuracy.</Text>
                 </>
               )}
 
@@ -313,7 +320,7 @@ export default function DiseaseDetectionScreen() {
                   <Text style={styles.buttonText}>{analyzing ? "Analyzing..." : "Camera"}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={[styles.actionButton, styles.secondaryButton]} onPress={handleScan} disabled={analyzing}>
-                  <Upload size={20} color="#0ea5e9" />
+                  <Upload size={20} color="#1A73E8" />
                   <Text style={[styles.buttonText, styles.secondaryButtonText]}>Gallery</Text>
                 </TouchableOpacity>
               </View>
@@ -432,21 +439,53 @@ export default function DiseaseDetectionScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8fafc",
+    backgroundColor: "#F7F9FC",
   },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 16,
+    paddingBottom: 20,
+  },
+  heroSection: {
+    marginBottom: 28,
+    alignItems: "center",
+  },
+  heroContent: {
+    alignItems: "center",
+  },
+  heroIconBg: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    backgroundColor: "rgba(59, 196, 126, 0.1)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+  },
+  heroTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#1e293b",
+    marginBottom: 4,
+  },
+  heroSubtitle: {
+    fontSize: 14,
+    color: "#64748b",
+    fontWeight: "500",
   },
   uploadCard: {
-    backgroundColor: "#fff",
-    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.6)",
+    borderRadius: 24,
     padding: 32,
     alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#e2e8f0",
-    borderStyle: "dashed",
-    marginBottom: 32,
+    borderWidth: 1.5,
+    borderColor: "rgba(26, 115, 232, 0.2)",
+    marginBottom: 28,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
   },
   overlayContainer: {
     width: "100%",
@@ -494,16 +533,15 @@ const styles = StyleSheet.create({
   iconContainer: {
     width: 80,
     height: 80,
-    borderRadius: 40,
-    backgroundColor: "#f1f5f9",
+    borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 16,
   },
   uploadTitle: {
     fontSize: 18,
-    fontWeight: "bold",
-    color: "#0f172a",
+    fontWeight: "600",
+    color: "#1e293b",
     marginBottom: 8,
   },
   uploadSubtitle: {
@@ -511,19 +549,26 @@ const styles = StyleSheet.create({
     color: "#64748b",
     textAlign: "center",
     marginBottom: 24,
+    fontWeight: "400",
   },
   buttonRow: {
     flexDirection: "row",
-    gap: 16,
+    gap: 12,
+    width: "100%",
   },
   actionButton: {
     flexDirection: "row",
-    backgroundColor: "#0ea5e9",
+    backgroundColor: "#1A73E8",
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 12,
     alignItems: "center",
     gap: 8,
+    shadowColor: "#1A73E8",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 3,
   },
   buttonText: {
     color: "#fff",
@@ -531,27 +576,35 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   secondaryButton: {
-    backgroundColor: "#e0f2fe",
+    backgroundColor: "rgba(26, 115, 232, 0.1)",
+    borderWidth: 1.5,
+    borderColor: "#1A73E8",
   },
   secondaryButtonText: {
-    color: "#0ea5e9",
+    color: "#1A73E8",
   },
   resultContainer: {
-    marginTop: 8,
+    marginTop: 0,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#0f172a",
+    color: "#1e293b",
     marginBottom: 16,
   },
   resultCard: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,0.7)",
+    borderRadius: 24,
     padding: 20,
-    elevation: 2,
+    elevation: 3,
     borderLeftWidth: 4,
-    borderLeftColor: "#dc2626",
+    borderLeftColor: "#E85C5C",
+    borderWidth: 1,
+    borderColor: "rgba(232, 92, 92, 0.1)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
   },
   resultHeader: {
     flexDirection: "row",
@@ -568,11 +621,12 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     textTransform: "uppercase",
     fontWeight: "600",
+    letterSpacing: 0.5,
   },
   diseaseName: {
     fontSize: 22,
-    fontWeight: "bold",
-    color: "#0f172a",
+    fontWeight: "700",
+    color: "#1e293b",
   },
   riskText: {
     marginTop: 4,
@@ -583,15 +637,16 @@ const styles = StyleSheet.create({
   severityBadge: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
     gap: 6,
+    borderWidth: 1.5,
   },
-  bgRed: { backgroundColor: "#fee2e2" },
-  bgYellow: { backgroundColor: "#fef9c3" },
-  textRed: { color: "#991b1b" },
-  textYellow: { color: "#854d0e" },
+  bgRed: { backgroundColor: "rgba(232, 92, 92, 0.1)", borderColor: "#E85C5C" },
+  bgYellow: { backgroundColor: "rgba(251, 191, 36, 0.1)", borderColor: "#FBBF24" },
+  textRed: { color: "#E85C5C" },
+  textYellow: { color: "#D97706" },
   severityText: {
     fontSize: 12,
     fontWeight: "700",
@@ -615,22 +670,25 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 10,
     alignItems: "center",
+    borderWidth: 1.5,
   },
   shareButton: {
-    backgroundColor: "#e0f2fe",
+    backgroundColor: "rgba(26, 115, 232, 0.08)",
+    borderColor: "#1A73E8",
   },
   reminderButton: {
-    backgroundColor: "#fef3c7",
+    backgroundColor: "rgba(59, 196, 126, 0.08)",
+    borderColor: "#3BC47E",
   },
   smallActionText: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#0f172a",
+    color: "#1e293b",
   },
   subTitle: {
     fontSize: 16,
-    fontWeight: "700",
-    color: "#334155",
+    fontWeight: "600",
+    color: "#1e293b",
     marginBottom: 12,
   },
   listItem: {
@@ -653,7 +711,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   buyButton: {
-    backgroundColor: "#0ea5e9",
+    backgroundColor: "#3BC47E",
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderRadius: 12,
@@ -662,6 +720,11 @@ const styles = StyleSheet.create({
     marginTop: 8,
     flexDirection: "row",
     gap: 10,
+    shadowColor: "#3BC47E",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 3,
   },
   buyButtonText: {
     color: "#fff",
@@ -672,7 +735,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 0,
   },
   selectedImage: {
     width: "100%",
@@ -690,13 +753,18 @@ const styles = StyleSheet.create({
   modalCard: {
     width: "100%",
     backgroundColor: "#fff",
-    borderRadius: 20,
-    padding: 20,
+    borderRadius: 24,
+    padding: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "700",
-    color: "#0f172a",
+    color: "#1e293b",
     marginBottom: 4,
   },
   modalRisk: {
@@ -719,10 +787,15 @@ const styles = StyleSheet.create({
   },
   modalCloseButton: {
     marginTop: 16,
-    backgroundColor: "#0ea5e9",
-    borderRadius: 10,
-    paddingVertical: 10,
+    backgroundColor: "#1A73E8",
+    borderRadius: 12,
+    paddingVertical: 12,
     alignItems: "center",
+    shadowColor: "#1A73E8",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 3,
   },
   modalCloseText: {
     color: "#fff",

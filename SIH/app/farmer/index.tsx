@@ -2,7 +2,7 @@ import { StationCard } from "@/components/station-card";
 import { StationMap } from "@/components/station-map";
 import { useStations } from "@/providers/stations-provider";
 import { router } from "expo-router";
-import { Droplet, Info, Layers, CloudRain, Thermometer, Leaf, ChevronDown } from "lucide-react-native";
+import { Droplet, Info, Layers, CloudRain, Thermometer, Leaf, ChevronDown, Radio, X } from "lucide-react-native";
 import { FarmerHeader, AiFab } from "@/components/FarmerHeader";
 import React, { useState, useEffect } from "react";
 import {
@@ -12,7 +12,9 @@ import {
   TouchableOpacity,
   View,
   ScrollView,
-  Dimensions
+  Dimensions,
+  Modal,
+  SafeAreaView
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -36,6 +38,7 @@ function MapScreenContent() {
   const [activeLayer, setActiveLayer] = useState<MapLayer>("groundwater");
   const [isLayerMenuOpen, setIsLayerMenuOpen] = useState(false);
   const [isBottomSheetExpanded, setIsBottomSheetExpanded] = useState<boolean>(false);
+  const [isFullPageMap, setIsFullPageMap] = useState<boolean>(false);
   const [locationName, setLocationName] = useState<string>("Locating...");
   const insets = useSafeAreaInsets();
   const [weather, setWeather] = useState<WeatherData | null>(null);
@@ -80,167 +83,211 @@ function MapScreenContent() {
     bgColors: readonly [string, string, ...string[]],
     onPress?: () => void,
   ) => (
-    <TouchableOpacity activeOpacity={onPress ? 0.8 : 1} onPress={onPress}>
+    <TouchableOpacity activeOpacity={onPress ? 0.7 : 1} onPress={onPress}>
       <LinearGradient
         colors={bgColors}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.summaryCard}
       >
-        <View style={styles.summaryCardHeader}>
-          <View style={styles.iconContainer}>
-            {icon}
+        {/* Background accent */}
+        <View style={styles.cardAccent} />
+        
+        {/* Content */}
+        <View style={styles.cardContent}>
+          <View style={styles.summaryCardHeader}>
+            <View style={styles.iconContainer}>
+              {icon}
+            </View>
+            <View style={styles.titleContainer}>
+              <Text style={styles.summaryCardTitle}>{title}</Text>
+            </View>
           </View>
-          <Text style={styles.summaryCardTitle}>{title}</Text>
+          
+          <View style={styles.valueContainer}>
+            <Text style={styles.summaryCardValue}>{value}</Text>
+          </View>
+          
+          <Text style={styles.summaryCardSubtext}>{subtext}</Text>
         </View>
-        <Text style={styles.summaryCardValue}>{value}</Text>
-        <Text style={styles.summaryCardSubtext}>{subtext}</Text>
       </LinearGradient>
     </TouchableOpacity>
   );
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <FarmerHeader />
-      <AiFab />
-      <View style={styles.summaryContainer}>
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.summaryContent}
-        >
-          {/* Groundwater Card */}
-          {renderSummaryCard(
-            "Groundwater",
-            estimatedLevel ? `${estimatedLevel.toFixed(1)}m` : "--",
-            "Current Level",
-            <Droplet size={20} color="#fff" />,
-            "#0ea5e9",
-            ["#3b82f6", "#2563eb"]
-          )}
-
-          {/* Weather Card */}
-          {renderSummaryCard(
-            "Weather",
-            weather ? `${weather.current.temp}°C` : "--",
-            weather ? `${weather.current.condition} • ${weather.current.humidity}% Hum` : "Loading...",
-            <CloudRain size={20} color="#fff" />,
-            "#f59e0b",
-            ["#f59e0b", "#d97706"]
-          )}
-
-          {/* Soil Health Card */}
-          {renderSummaryCard(
-            "Soil Health",
-            "Good",
-            "Nitrogen: Optimal",
-            <Leaf size={20} color="#fff" />,
-            "#22c55e",
-            ["#22c55e", "#16a34a"],
-            () => router.push("/farmer/soil-report")
-          )}
-        </ScrollView>
-      </View>
-
-      {/* Map Section */}
-      <View style={styles.mapContainer}>
-        <View style={styles.mapHeader}>
-          <Text style={styles.mapTitle}>Live Monitoring Map</Text>
-          <View style={styles.liveIndicator}>
-            <View style={styles.pulsingDot} />
-            <Text style={styles.liveText}>Live Updates</Text>
-          </View>
-        </View>
-
-        <View style={{ flex: 1, position: 'relative' }}>
-          <StationMap
-            stations={stations} // Pass all stations, map component can handle filtering if needed
-            userLocation={userLocation}
-            onStationPress={(station) => router.push(`/station/${station.id}`)}
-          />
-
-          {/* Layer Control FAB */}
-          <View style={styles.layerControlContainer}>
-            {isLayerMenuOpen && (
-              <View style={styles.layerMenu}>
-                <Text style={styles.layerMenuTitle}>Map Layers</Text>
-                
-                <TouchableOpacity 
-                  style={[styles.layerOption, activeLayer === 'groundwater' && styles.layerOptionActive]}
-                  onPress={() => { setActiveLayer('groundwater'); setIsLayerMenuOpen(false); }}
-                >
-                  <Droplet size={16} color={activeLayer === 'groundwater' ? "#0ea5e9" : "#64748b"} />
-                  <Text style={[styles.layerOptionText, activeLayer === 'groundwater' && styles.layerOptionTextActive]}>Groundwater</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity 
-                  style={[styles.layerOption, activeLayer === 'rainfall' && styles.layerOptionActive]}
-                  onPress={() => { setActiveLayer('rainfall'); setIsLayerMenuOpen(false); }}
-                >
-                  <CloudRain size={16} color={activeLayer === 'rainfall' ? "#0ea5e9" : "#64748b"} />
-                  <Text style={[styles.layerOptionText, activeLayer === 'rainfall' && styles.layerOptionTextActive]}>Rainfall Heatmap</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity 
-                  style={[styles.layerOption, activeLayer === 'soil' && styles.layerOptionActive]}
-                  onPress={() => { setActiveLayer('soil'); setIsLayerMenuOpen(false); }}
-                >
-                  <Leaf size={16} color={activeLayer === 'soil' ? "#0ea5e9" : "#64748b"} />
-                  <Text style={[styles.layerOptionText, activeLayer === 'soil' && styles.layerOptionTextActive]}>Soil Moisture</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-            
+    <>
+      {/* Full-Page Map Modal */}
+      <Modal
+        visible={isFullPageMap}
+        animationType="slide"
+        onRequestClose={() => setIsFullPageMap(false)}
+      >
+        <SafeAreaView style={styles.fullPageMapContainer}>
+          <View style={styles.fullMapHeader}>
+            <Text style={styles.fullMapTitle}>Live Monitoring Map</Text>
             <TouchableOpacity 
-              style={styles.layerFab}
-              onPress={() => setIsLayerMenuOpen(!isLayerMenuOpen)}
+              style={styles.closeButton}
+              onPress={() => setIsFullPageMap(false)}
             >
-              <Layers size={24} color="#1e293b" />
+              <X size={24} color="#1e293b" />
             </TouchableOpacity>
           </View>
-        </View>
-      </View>
 
-      {/* Bottom Sheet (Nearby Insights) */}
-      <View style={[styles.bottomSheet, isBottomSheetExpanded && styles.bottomSheetExpanded]}>
-        <TouchableOpacity
-          style={styles.bottomSheetHandle}
-          onPress={() => setIsBottomSheetExpanded(!isBottomSheetExpanded)}
-        >
-          <View style={styles.handle} />
-        </TouchableOpacity>
-
-        <View style={styles.bottomSheetHeader}>
-          <View>
-            <Text style={styles.bottomSheetTitle}>Nearby Insights</Text>
-            <Text style={styles.bottomSheetSubtitle}>
-              {nearbyStations.length} stations within 50km
-            </Text>
-          </View>
-          <TouchableOpacity 
-            style={styles.expandButton}
-            onPress={() => setIsBottomSheetExpanded(!isBottomSheetExpanded)}
-          >
-            <ChevronDown size={20} color="#64748b" style={{ transform: [{ rotate: isBottomSheetExpanded ? '180deg' : '0deg' }] }} />
-          </TouchableOpacity>
-        </View>
-
-        <FlatList
-          data={nearbyStations}
-          keyExtractor={(station) => station.id}
-          renderItem={({ item: station }) => (
-            <StationCard
-              station={station}
-              onPress={() => router.push(`/station/${station.id}`)}
+          <View style={{ flex: 1, position: 'relative' }}>
+            <StationMap
+              stations={stations}
+              userLocation={userLocation}
+              onStationPress={(station) => router.push(`/station/${station.id}`)}
             />
-          )}
-          style={styles.stationsList}
-          nestedScrollEnabled
+
+            {/* Layer Control FAB */}
+            <View style={styles.layerControlContainer}>
+              {isLayerMenuOpen && (
+                <View style={styles.layerMenu}>
+                  <Text style={styles.layerMenuTitle}>Map Layers</Text>
+                  
+                  <TouchableOpacity 
+                    style={[styles.layerOption, activeLayer === 'groundwater' && styles.layerOptionActive]}
+                    onPress={() => { setActiveLayer('groundwater'); setIsLayerMenuOpen(false); }}
+                  >
+                    <Droplet size={16} color={activeLayer === 'groundwater' ? "#0ea5e9" : "#64748b"} />
+                    <Text style={[styles.layerOptionText, activeLayer === 'groundwater' && styles.layerOptionTextActive]}>Groundwater</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    style={[styles.layerOption, activeLayer === 'rainfall' && styles.layerOptionActive]}
+                    onPress={() => { setActiveLayer('rainfall'); setIsLayerMenuOpen(false); }}
+                  >
+                    <CloudRain size={16} color={activeLayer === 'rainfall' ? "#0ea5e9" : "#64748b"} />
+                    <Text style={[styles.layerOptionText, activeLayer === 'rainfall' && styles.layerOptionTextActive]}>Rainfall Heatmap</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    style={[styles.layerOption, activeLayer === 'soil' && styles.layerOptionActive]}
+                    onPress={() => { setActiveLayer('soil'); setIsLayerMenuOpen(false); }}
+                  >
+                    <Leaf size={16} color={activeLayer === 'soil' ? "#0ea5e9" : "#64748b"} />
+                    <Text style={[styles.layerOptionText, activeLayer === 'soil' && styles.layerOptionTextActive]}>Soil Moisture</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+              
+              <TouchableOpacity 
+                style={styles.layerFab}
+                onPress={() => setIsLayerMenuOpen(!isLayerMenuOpen)}
+              >
+                <Layers size={24} color="#1e293b" />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </SafeAreaView>
+      </Modal>
+
+      {/* Main Screen */}
+      <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+        <FarmerHeader />
+        <AiFab />
+        
+        <ScrollView 
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 24 }}
-        />
+          contentContainerStyle={styles.scrollContent}
+        >
+          {/* Summary Cards */}
+          <View style={styles.summaryContainer}>
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.summaryContent}
+            >
+              {/* Groundwater Card */}
+              {renderSummaryCard(
+                "Groundwater",
+                estimatedLevel ? `${estimatedLevel.toFixed(1)}m` : "--",
+                "Current Level",
+                <Droplet size={20} color="#fff" />,
+                "#0ea5e9",
+                ["#3b82f6", "#2563eb"]
+              )}
+
+              {/* Weather Card */}
+              {renderSummaryCard(
+                "Weather",
+                weather ? `${weather.current.temp}°C` : "--",
+                weather ? `${weather.current.condition} • ${weather.current.humidity}% Hum` : "Loading...",
+                <CloudRain size={20} color="#ffffffff" />,
+                "#f59e0b",
+                ["#ce8e1eff", "#d97706"],
+                () => router.push("/farmer/weather")
+              )}
+
+              {/* Soil Health Card */}
+              {renderSummaryCard(
+                "Soil Health",
+                "Good",
+                "Nitrogen: Optimal",
+                <Leaf size={20} color="#fff" />,
+                "#22c55e",
+                ["#22c55e", "#16a34a"],
+                () => router.push("/farmer/soil-report")
+              )}
+            </ScrollView>
+          </View>
+
+          {/* Map Section */}
+          <TouchableOpacity 
+            style={styles.mapContainer}
+            onPress={() => setIsFullPageMap(true)}
+            activeOpacity={0.8}
+          >
+            <View style={styles.mapHeader}>
+              <Text style={styles.mapTitle}>Live Monitoring Map</Text>
+              <View style={styles.liveIndicator}>
+                <View style={styles.pulsingDot} />
+                <Text style={styles.liveText}>Live Updates</Text>
+              </View>
+            </View>
+
+            <View style={{ flex: 1, position: 'relative' }}>
+              <StationMap
+                stations={stations}
+                userLocation={userLocation}
+                onStationPress={(station) => router.push(`/station/${station.id}`)}
+              />
+            </View>
+          </TouchableOpacity>
+
+          {/* Nearby Insights */}
+          <View style={styles.bottomSheetInline}>
+            <View style={styles.bottomSheetHeader}>
+              <View style={styles.bottomSheetTitleRow}>
+                <View style={styles.insightIconBg}>
+                  <Radio size={16} color="#0ea5e9" />
+                </View>
+                <View>
+                  <Text style={styles.bottomSheetTitle}>Nearby Insights</Text>
+                  <Text style={styles.bottomSheetSubtitle}>
+                    {nearbyStations.length} stations • 50km radius
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            <FlatList
+              data={nearbyStations}
+              keyExtractor={(station) => station.id}
+              renderItem={({ item: station }) => (
+                <StationCard
+                  station={station}
+                  onPress={() => router.push(`/station/${station.id}`)}
+                />
+              )}
+              scrollEnabled={false}
+              contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24 }}
+            />
+          </View>
+        </ScrollView>
       </View>
-    </View>
+    </>
   );
 }
 
@@ -253,7 +300,7 @@ export default function MapScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8fafc",
+    backgroundColor: "#f8fbff",
   },
   header: {
     flexDirection: "row",
@@ -319,16 +366,18 @@ const styles = StyleSheet.create({
   },
   summaryContainer: {
     marginBottom: 0,
-    backgroundColor: "white",
+    backgroundColor: "rgba(255,255,255,0.5)",
     paddingBottom: 16,
     paddingTop: 12,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(226, 232, 240, 0.3)",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+    elevation: 5,
     zIndex: 10,
   },
   summaryContent: {
@@ -337,88 +386,136 @@ const styles = StyleSheet.create({
   },
   summaryCard: {
     width: width * 0.42,
-    padding: 16,
-    borderRadius: 20,
+    padding: 18,
+    borderRadius: 24,
+    height: 170,
+    overflow: "hidden",
+    backgroundColor: "rgba(255,255,255,0.6)",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.8)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  cardAccent: {
+    position: "absolute",
+    top: -30,
+    right: -30,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: "rgba(255,255,255,0.15)",
+  },
+  cardContent: {
+    flex: 1,
     justifyContent: "space-between",
-    height: 140,
+    zIndex: 1,
   },
   summaryCardHeader: {
     flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    marginBottom: 12,
+    alignItems: "center",
+    marginBottom: 10,
   },
   iconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
+    width: 48,
+    height: 48,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.3)",
+    marginRight: 12,
+    shadowColor: "#0891b2",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  titleContainer: {
+    flex: 1,
   },
   summaryCardTitle: {
+    fontSize: 13,
+    color: "rgba(255,255,255,0.95)",
+    fontWeight: "700",
+  },
+  valueContainer: {
+    marginBottom: 6,
+  },
+  summaryCardValue: {
+    fontSize: 32,
+    fontWeight: "900",
+    color: "white",
+    letterSpacing: -0.8,
+  },
+  summaryCardSubtext: {
     fontSize: 12,
     color: "rgba(255,255,255,0.9)",
     fontWeight: "600",
-    flex: 1,
-    textAlign: "right",
-    marginLeft: 8,
-  },
-  summaryCardValue: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "white",
-    marginBottom: 4,
-  },
-  summaryCardSubtext: {
-    fontSize: 11,
-    color: "rgba(255,255,255,0.8)",
-    fontWeight: "500",
+    lineHeight: 16,
   },
   mapContainer: {
-    flex: 1,
-    margin: 10,
-    marginBottom: 110,
-    borderRadius: 24,
+    height: 300,
+    margin: 12,
+    marginBottom: 12,
+    borderRadius: 28,
     overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    backgroundColor: "white",
-    elevation: 4,
+    backgroundColor: "rgba(255,255,255,0.7)",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.8)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.14,
+    shadowRadius: 20,
+    elevation: 10,
   },
   mapHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: "white",
-    // Removed border to bring map closer visually
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    backgroundColor: "rgba(255,255,255,0.5)",
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(226, 232, 240, 0.4)",
   },
   mapTitle: {
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: "900",
     color: "#1e293b",
+    letterSpacing: -0.4,
   },
   liveIndicator: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f0fdf4",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#bbf7d0",
+    backgroundColor: "rgba(240, 253, 244, 0.8)",
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: "rgba(134, 239, 172, 0.6)",
+    shadowColor: "#22c55e",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 3,
   },
   pulsingDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
     backgroundColor: "#22c55e",
-    marginRight: 6,
+    marginRight: 7,
+    shadowColor: "#22c55e",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 6,
+    elevation: 4,
   },
   liveText: {
-    fontSize: 10,
-    fontWeight: "600",
+    fontSize: 12,
+    fontWeight: "800",
     color: "#15803d",
   },
   layerControlContainer: {
@@ -484,15 +581,17 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: "white",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    backgroundColor: "rgba(255,255,255,0.75)",
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.8)",
     paddingTop: 8,
-    height: 100,
+    height: 140,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
+    shadowOffset: { width: 0, height: -12 },
+    shadowOpacity: 0.18,
+    shadowRadius: 20,
     elevation: 16,
     zIndex: 50,
   },
@@ -502,32 +601,55 @@ const styles = StyleSheet.create({
   },
   bottomSheetHandle: {
     alignItems: "center",
-    paddingVertical: 8,
+    paddingVertical: 10,
   },
   handle: {
-    width: 40,
-    height: 4,
-    backgroundColor: "#cbd5e1",
-    borderRadius: 2,
+    width: 44,
+    height: 5,
+    backgroundColor: "rgba(203, 213, 225, 0.6)",
+    borderRadius: 2.5,
   },
   bottomSheetHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f1f5f9",
+    paddingVertical: 14,
+    borderBottomWidth: 1.5,
+    borderBottomColor: "rgba(226, 232, 240, 0.4)",
+  },
+  bottomSheetTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  insightIconBg: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: "rgba(224, 242, 254, 0.8)",
+    borderWidth: 1.5,
+    borderColor: "rgba(186, 230, 253, 0.5)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 14,
+    shadowColor: "#0891b2",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 2,
   },
   bottomSheetTitle: {
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: "900",
     color: "#1e293b",
+    letterSpacing: -0.4,
   },
   bottomSheetSubtitle: {
     fontSize: 12,
     color: "#64748b",
-    marginTop: 2,
+    marginTop: 3,
+    fontWeight: "600",
   },
   expandButton: {
     padding: 8,
@@ -536,5 +658,62 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
     paddingTop: 12,
+  },
+  scrollContent: {
+    paddingBottom: 100,
+  },
+  fullPageMapContainer: {
+    flex: 1,
+    backgroundColor: "#f8fbff",
+  },
+  fullMapHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: "rgba(255,255,255,0.7)",
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(226, 232, 240, 0.4)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  fullMapTitle: {
+    fontSize: 18,
+    fontWeight: "900",
+    color: "#1e293b",
+    letterSpacing: -0.4,
+  },
+  closeButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: "rgba(241, 245, 249, 0.8)",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  bottomSheetInline: {
+    backgroundColor: "rgba(255,255,255,0.5)",
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderTopWidth: 1.5,
+    borderTopColor: "rgba(255,255,255,0.8)",
+    marginHorizontal: 12,
+    marginTop: 12,
+    marginBottom: 20,
+    paddingTop: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 8,
   },
 });
