@@ -7,8 +7,12 @@ import {
   ActivityIndicator,
   Dimensions,
   TouchableOpacity,
+  Modal,
 } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import {
   CloudRain,
   Sun,
@@ -25,26 +29,12 @@ import {
   Thermometer,
   Sunrise,
   Sunset,
-  Map,
-  Layers,
-  Mountain,
 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useStations } from "@/providers/stations-provider";
 import { fetchWeather, WeatherData } from "@/services/weather-service";
-import {
-  fetchIndiaHeatmapData,
-  getTemperatureColor,
-  getRainfallColor,
-  getWindColor,
-  getHumidityColor,
-  getGroundwaterColor,
-  getLegendData,
-  CityWeatherData,
-} from "@/services/india-heatmap-service";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { FarmerHeader, AiFab } from "@/components/FarmerHeader";
-import { WeatherHeatmap } from "@/components/WeatherHeatmap";
+import { FarmerHeader } from "@/components/FarmerHeader";
 
 const { width } = Dimensions.get("window");
 
@@ -105,15 +95,10 @@ export default function WeatherScreen() {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedMapLayer, setSelectedMapLayer] =
-    useState<string>("temperature");
-  const [heatmapData, setHeatmapData] = useState<CityWeatherData[]>([]);
-  const [loadingHeatmap, setLoadingHeatmap] = useState<boolean>(false);
 
   useEffect(() => {
     if (userLocation) {
       loadWeather(userLocation.latitude, userLocation.longitude);
-      loadHeatmapData();
     }
   }, [userLocation]);
 
@@ -130,19 +115,6 @@ export default function WeatherScreen() {
       setLoading(false);
     }
   };
-
-  const loadHeatmapData = async () => {
-    try {
-      setLoadingHeatmap(true);
-      const data = await fetchIndiaHeatmapData();
-      setHeatmapData(data);
-    } catch (err) {
-      console.error("Heatmap data error:", err);
-    } finally {
-      setLoadingHeatmap(false);
-    }
-  };
-
 
   // Loading state
   if (isLoadingLocation || (loading && !weather)) {
@@ -199,10 +171,16 @@ export default function WeatherScreen() {
   return (
     <SafeAreaView style={[styles.container, { paddingBottom: insets.bottom }]}>
       <FarmerHeader />
-      <AiFab />
-      <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
+
+      <ScrollView
+        style={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Header */}
-        <PageHeader title="Weather" subtitle={weather?.current.city || "Current Location"} />
+        <PageHeader
+          title="Weather"
+          subtitle={weather?.current.city || "Current Location"}
+        />
 
         {/* Main Weather Card */}
         <LinearGradient
@@ -355,134 +333,6 @@ export default function WeatherScreen() {
                   : "6:30 PM"}
               </Text>
             </View>
-          </View>
-        </View>
-
-        {/* Weather Heat Maps Section */}
-        <View style={styles.weatherMapsSection}>
-          <View style={styles.mapHeader}>
-            <View style={styles.mapTitleRow}>
-              <Map size={24} color="#0f172a" />
-              <Text style={styles.mapTitle}>India Weather Heatmaps</Text>
-            </View>
-            <Text style={styles.mapSubtitle}>
-              Real-time weather data across major Indian cities
-            </Text>
-          </View>
-
-          {/* Map Layer Selector */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.layerSelector}
-          >
-            {[
-              {
-                id: "temperature",
-                label: "Temperature",
-                icon: Thermometer,
-                color: "#ef4444",
-              },
-              {
-                id: "rainfall",
-                label: "Rainfall",
-                icon: CloudRain,
-                color: "#3b82f6",
-              },
-              { id: "wind", label: "Wind", icon: Wind, color: "#64748b" },
-              {
-                id: "humidity",
-                label: "Humidity",
-                icon: Droplets,
-                color: "#0ea5e9",
-              },
-              {
-                id: "groundwater",
-                label: "Groundwater",
-                icon: Mountain,
-                color: "#84cc16",
-              },
-            ].map((layer) => {
-              const IconComponent = layer.icon;
-              const isSelected = selectedMapLayer === layer.id;
-              return (
-                <TouchableOpacity
-                  key={layer.id}
-                  style={[
-                    styles.layerButton,
-                    isSelected && {
-                      backgroundColor: layer.color,
-                      shadowOpacity: 0.3,
-                    },
-                  ]}
-                  onPress={() => setSelectedMapLayer(layer.id)}
-                >
-                  <IconComponent
-                    size={20}
-                    color={isSelected ? "#fff" : layer.color}
-                  />
-                  <Text
-                    style={[
-                      styles.layerButtonText,
-                      isSelected && { color: "#fff" },
-                    ]}
-                  >
-                    {layer.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-
-          {/* Legend */}
-          <View style={styles.legendContainer}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.legendScroll}
-            >
-              {getLegendData(selectedMapLayer).map((item, index) => (
-                <View key={index} style={styles.legendItem}>
-                  <View
-                    style={[
-                      styles.legendColor,
-                      { backgroundColor: item.color },
-                    ]}
-                  />
-                  <Text style={styles.legendLabel}>{item.label}</Text>
-                </View>
-              ))}
-            </ScrollView>
-          </View>
-
-          {/* OpenStreetMap Heatmap Display */}
-          <View style={styles.mapContainer}>
-            <WeatherHeatmap
-              data={heatmapData}
-              selectedLayer={selectedMapLayer}
-              loading={loadingHeatmap}
-              userLocation={userLocation}
-            />
-          </View>
-
-          {/* Data Info */}
-          <View style={styles.dataInfoContainer}>
-            <Text style={styles.dataInfoTitle}>About this data</Text>
-            <Text style={styles.dataInfoText}>
-              • Temperature: Current air temperature in °C
-            </Text>
-            <Text style={styles.dataInfoText}>
-              • Rainfall: Recent precipitation in mm
-            </Text>
-            <Text style={styles.dataInfoText}>
-              • Wind: Wind speed in km/h
-            </Text>
-            <Text style={styles.dataInfoText}>
-              • Humidity: Relative humidity in %
-            </Text>
-            <Text style={styles.dataInfoText}>
-              • Groundwater: Depth below surface in meters
-            </Text>
           </View>
         </View>
 
@@ -908,8 +758,55 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
+    position: "relative",
   },
 
+  mapOverlay: {
+    position: "absolute",
+    bottom: 12,
+    right: 12,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+
+  mapOverlayText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+
+  fullPageMapContainer: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
+
+  fullMapHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e2e8f0",
+    backgroundColor: "#fff",
+  },
+
+  fullMapTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#1e293b",
+  },
+
+  closeMapButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#f1f5f9",
+    alignItems: "center",
+    justifyContent: "center",
+  },
 
   dataInfoContainer: {
     marginTop: 16,
@@ -933,5 +830,35 @@ const styles = StyleSheet.create({
     color: "#64748b",
     lineHeight: 18,
     marginBottom: 4,
+  },
+
+  // Wind info card styles
+  windInfoCard: {
+    backgroundColor: "#f0f9ff",
+    borderRadius: 12,
+    marginHorizontal: 20,
+    marginBottom: 16,
+    padding: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: "#3b82f6",
+  },
+
+  windInfoHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+
+  windInfoTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#1e40af",
+    marginLeft: 8,
+  },
+
+  windInfoText: {
+    fontSize: 14,
+    color: "#64748b",
+    lineHeight: 20,
   },
 });

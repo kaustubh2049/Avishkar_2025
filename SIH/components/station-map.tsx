@@ -1,4 +1,5 @@
 import { LocationData, Station } from "@/providers/stations-provider";
+import { ProcessedWindData } from "@/services/wind-speed-service";
 import React, { useMemo, useRef } from "react";
 import { Dimensions, StyleSheet, View } from "react-native";
 import WebView, { WebViewMessageEvent } from "react-native-webview";
@@ -7,10 +8,17 @@ interface StationMapProps {
   stations: Station[];
   userLocation?: LocationData | null;
   onStationPress: (station: Station) => void;
-  activeLayer?: "groundwater" | "temperature" | "soil" | "crop";
+  activeLayer?: "groundwater" | "temperature" | "soil" | "crop" | "wind";
+  windData?: ProcessedWindData[];
 }
 
-export function StationMap({ stations, userLocation, onStationPress, activeLayer = "groundwater" }: StationMapProps) {
+export function StationMap({
+  stations,
+  userLocation,
+  onStationPress,
+  activeLayer = "groundwater",
+  windData = [],
+}: StationMapProps) {
   const { height } = Dimensions.get("window");
   const webRef = useRef<WebView | null>(null);
   const accuWeatherKey = process.env.EXPO_PUBLIC_ACCUWEATHER_API_KEY || "";
@@ -24,8 +32,10 @@ export function StationMap({ stations, userLocation, onStationPress, activeLayer
 
     const payload = {
       initialCenter,
-      user: userLocation ? { lat: userLocation.latitude, lng: userLocation.longitude } : null,
-      stations: stations.map(s => ({
+      user: userLocation
+        ? { lat: userLocation.latitude, lng: userLocation.longitude }
+        : null,
+      stations: stations.map((s) => ({
         id: s.id,
         name: s.name,
         district: s.district,
@@ -37,8 +47,23 @@ export function StationMap({ stations, userLocation, onStationPress, activeLayer
         temperature: s.temperature,
         week: s.week,
       })),
+      rainfallData: [], // Keep for backward compatibility but empty
+      windData: windData.map((w) => ({
+        id: w.id,
+        latitude: w.latitude,
+        longitude: w.longitude,
+        windSpeed: w.windSpeed,
+        windDirection: w.windDirection,
+        gustSpeed: w.gustSpeed,
+        location: w.location,
+        color: w.color,
+        opacity: w.opacity,
+        category: w.category,
+        intensity: w.intensity,
+        timestamp: w.timestamp,
+      })),
       activeLayer,
-      accuWeatherKey
+      accuWeatherKey,
     };
 
     const dataScript = `window.__MAP_DATA__ = ${JSON.stringify(payload)};`;
@@ -95,6 +120,52 @@ export function StationMap({ stations, userLocation, onStationPress, activeLayer
     padding: 4px 0;
     border-top: 1px solid #e2e8f0;
     padding-top: 8px;
+  }
+
+  /* Enhanced circle styling for heatmap effect */
+  .leaflet-interactive {
+    filter: blur(0px);
+    transition: all 0.3s ease;
+  }
+  
+  .leaflet-interactive:hover {
+    filter: blur(0px) brightness(1.1);
+    transform: scale(1.05);
+  }
+  
+  /* Wind-specific styles */
+  .wind-circle {
+    animation: windPulse 2s infinite ease-in-out;
+  }
+  
+  .wind-arrow {
+    pointer-events: none;
+    z-index: 1000;
+  }
+  
+  @keyframes windPulse {
+    0%, 100% {
+      opacity: 0.7;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+  
+  /* Smooth popup animations */
+  .leaflet-popup {
+    animation: popupFadeIn 0.3s ease-out;
+  }
+  
+  @keyframes popupFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
   
   .callout-meta:first-of-type {
@@ -154,8 +225,75 @@ function updateLayer(layerName) {
         }
       }).addTo(map);
     }
-  } else if (layerName === 'rainfall' && data.accuWeatherKey) {
-    // AccuWeather Radar
+  } else if (layerName === 'wind') {
+    // Wind speed data - display as animated circles with direction arrows
+    if (data.windData && data.windData.length > 0) {
+      data.windData.forEach(function(wind) {
+        // Create main wind speed circle
+        const circle = L.circle([wind.latitude, wind.longitude], {
+          color: wind.color,
+          fillColor: wind.color,
+          fillOpacity: wind.opacity * 0.7,
+          radius: Math.max(8000, wind.windSpeed * 400), // Scale radius based on wind speed
+          weight: 2,
+          className: 'wind-circle'
+        });
+        
+        // Create wind direction arrow using DivIcon
+        const arrowIcon = L.divIcon({
+          html: '<div style="transform: rotate(' + wind.windDirection + 'deg); font-size: 16px; color: ' + wind.color + '; text-shadow: 1px 1px 2px rgba(255,255,255,0.8);">&uarr;</div>',
+          className: 'wind-arrow',
+          iconSize: [20, 20],
+          iconAnchor: [10, 10]
+        });
+        
+        const arrowMarker = L.marker([wind.latitude, wind.longitude], {
+          icon: arrowIcon,
+          zIndexOffset: 1000
+        });
+        
+        // Enhanced popup with wind information
+        const popupContent = '<div style="font-family: system-ui; padding: 12px; min-width: 220px;">' +
+          '<div style="font-size: 16px; font-weight: bold; color: #1a1a1a; margin-bottom: 8px; display: flex; align-items: center;">' +
+            '<span style="margin-right: 8px;">🌬️</span>' + wind.location +
+          '</div>' +
+          '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">' +
+            '<div style="background: #f8fafc; padding: 8px; border-radius: 6px; text-align: center;">' +
+              '<div style="font-size: 12px; color: #666; margin-bottom: 2px;">Wind Speed</div>' +
+              '<div style="font-weight: bold; color: ' + wind.color + '; font-size: 16px;">' + wind.windSpeed + ' km/h</div>' +
+            '</div>' +
+            '<div style="background: #f8fafc; padding: 8px; border-radius: 6px; text-align: center;">' +
+              '<div style="font-size: 12px; color: #666; margin-bottom: 2px;">Direction</div>' +
+              '<div style="font-weight: bold; color: #333; font-size: 16px;">' + wind.windDirection + '°</div>' +
+            '</div>' +
+          '</div>' +
+          '<div style="background: linear-gradient(90deg, ' + wind.color + '20, ' + wind.color + '40); padding: 8px 12px; border-radius: 6px; text-align: center; margin-bottom: 8px;">' +
+            '<div style="color: #333; font-size: 13px; font-weight: 600;">' + wind.intensity + ' Wind</div>' +
+            '<div style="color: #666; font-size: 11px;">' + wind.category + '</div>' +
+          '</div>' +
+          '<div style="color: #888; font-size: 10px; text-align: center;">' +
+            'Updated: ' + new Date(wind.timestamp).toLocaleTimeString() +
+          '</div>' +
+          '</div>';
+        
+        // Add popup to the circle
+        circle.bindPopup(popupContent);
+        
+        // Add both circle and arrow to map
+        circle.addTo(map);
+        arrowMarker.addTo(map);
+        
+        // Store references for removal
+        if (!activeOverlay) {
+          activeOverlay = L.layerGroup();
+          activeOverlay.addTo(map);
+        }
+        activeOverlay.addLayer(circle);
+        activeOverlay.addLayer(arrowMarker);
+      });
+    }
+  } else if (layerName === 'accuweather-rainfall' && data.accuWeatherKey) {
+    // AccuWeather Radar (kept as fallback)
     activeOverlay = L.tileLayer(
       'https://api.accuweather.com/maps/v1/radar/{z}/{x}/{y}.png?apikey=' + data.accuWeatherKey, 
       {
@@ -242,9 +380,9 @@ setTimeout(notifyBounds, 0);
 
   const handleMessage = (e: WebViewMessageEvent) => {
     try {
-      const msg = JSON.parse(e.nativeEvent.data || '{}');
-      if (msg.type === 'stationTap') {
-        const st = stations.find(s => s.id === msg.id);
+      const msg = JSON.parse(e.nativeEvent.data || "{}");
+      if (msg.type === "stationTap") {
+        const st = stations.find((s) => s.id === msg.id);
         if (st) onStationPress(st);
       }
       // msg.type === 'region' can be used if you need bounds on RN side
@@ -252,9 +390,11 @@ setTimeout(notifyBounds, 0);
   };
 
   return (
-    <View style={[styles.container, { height: height * 0.5 }]}> 
+    <View style={[styles.container, { height: height * 0.5 }]}>
       <WebView
-        ref={(r) => { webRef.current = r; }}
+        ref={(r) => {
+          webRef.current = r;
+        }}
         originWhitelist={["*"]}
         source={{ html }}
         onMessage={handleMessage}

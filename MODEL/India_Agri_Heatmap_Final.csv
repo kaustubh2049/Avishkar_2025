@@ -1,0 +1,40 @@
+State,City,Latitude,Longitude,Rainfall_mm,Soil_Type,Avg_Temp_C,Altitude_m
+Maharashtra,Mumbai,19.076,72.8777,2400,Coastal Alluvial,27.2,14
+Maharashtra,Ratnagiri,16.9902,73.312,3000,Laterite (Red),26.5,11
+Maharashtra,Alibag,18.6414,72.8722,2800,Coastal Saline,27.0,7
+Maharashtra,Pune,18.5204,73.8567,722,Medium Black,25.0,560
+Maharashtra,Satara,17.6805,74.0183,900,Black/Red Mix,24.5,742
+Maharashtra,Kolhapur,16.705,74.2433,1000,Deep Black,26.0,569
+Maharashtra,Nashik,19.9975,73.7898,690,Coarse Shallow,24.5,584
+Maharashtra,Solapur,17.6599,75.9064,545,Medium Black (Dry),28.5,458
+Maharashtra,Aurangabad,19.8762,75.3433,730,Deep Black,27.5,569
+Maharashtra,Latur,18.4088,76.5604,700,Black Cotton,28.0,636
+Maharashtra,Nanded,19.1383,77.321,850,Black Clayey,28.5,360
+Maharashtra,Nagpur,21.1458,79.0882,1160,Deep Black Cotton,28.0,310
+Maharashtra,Amravati,20.9374,77.7796,850,Medium Black,27.8,343
+Maharashtra,Akola,20.7002,77.0082,800,Black Soil,28.2,282
+Maharashtra,Chandrapur,19.9615,79.2961,1200,Red/Black Mix,29.0,190
+Jammu & Kashmir,Srinagar,34.0837,74.7973,720,Mountain/Silt,13.5,1585
+Himachal Pradesh,Shimla,31.1048,77.1734,1250,Mountain,15.2,2276
+Uttarakhand,Dehradun,30.3165,78.0322,2200,Forest Soil,20.5,450
+Punjab,Amritsar,31.634,74.8723,780,Alluvial,24.2,234
+Haryana,Ambala,30.3782,76.7767,1000,Alluvial,24.5,276
+Uttar Pradesh,Lucknow,26.8467,80.9462,900,Alluvial,26.2,123
+Rajasthan,Jaipur,26.9124,75.7873,600,Desert/Sierozem,28.0,431
+Gujarat,Ahmedabad,23.0225,72.5714,800,Black Cotton,29.0,53
+Madhya Pradesh,Bhopal,23.2599,77.4126,1150,Black Cotton,26.0,527
+Chhattisgarh,Raipur,21.2514,81.6296,1300,Red-Yellow,27.0,298
+Bihar,Patna,25.5941,85.1376,1100,Alluvial,26.0,53
+Jharkhand,Ranchi,23.3441,85.3096,1400,Red Soil,24.0,651
+West Bengal,Kolkata,22.5726,88.3639,1600,Alluvial,27.0,9
+Odisha,Bhubaneswar,20.2961,85.8245,1500,Red/Laterite,28.0,45
+Assam,Guwahati,26.1445,91.7362,1800,Alluvial,24.5,55
+Meghalaya,Shillong,25.5788,91.8933,2300,Laterite,17.0,1525
+Telangana,Hyderabad,17.385,78.4867,850,Red Sandy,28.0,542
+Andhra Pradesh,Visakhapatnam,17.6868,83.2185,1100,Red Loam,29.0,45
+Karnataka,Bangalore,12.9716,77.5946,900,Red Loam,24.0,920
+Karnataka,Mangalore,12.9141,74.856,3500,Laterite,28.0,22
+Tamil Nadu,Chennai,13.0827,80.2707,1400,Coastal Alluvial,30.0,7
+Kerala,Thiruvananthapuram,8.5241,76.9366,1700,Laterite,28.0,8
+Kerala,Munnar,10.0889,77.0595,2500,Forest/Mountain,16.5,1532
+Goa,Panaji,15.4909,73.8278,2900,Laterite,28.0,7

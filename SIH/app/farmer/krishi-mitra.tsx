@@ -11,7 +11,10 @@ import {
   Platform,
   Dimensions,
 } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import {
   Send,
   MessageCircle,
@@ -28,7 +31,7 @@ import {
   ChatMessage,
   AIResponse,
 } from "@/services/aiAssistantService";
-import { FarmerHeader, AiFab } from "@/components/FarmerHeader";
+import { FarmerHeader } from "@/components/FarmerHeader";
 
 const { width } = Dimensions.get("window");
 
@@ -114,20 +117,18 @@ export default function KrishiMitraScreen() {
   return (
     <SafeAreaView style={[styles.container, { paddingBottom: insets.bottom }]}>
       <FarmerHeader />
-      <AiFab />
 
       {/* Header */}
-      <LinearGradient
-        colors={["#1A73E8", "#1565D8"]}
-        style={styles.header}
-      >
+      <LinearGradient colors={["#1A73E8", "#1565D8"]} style={styles.header}>
         <View style={styles.headerContent}>
           <View style={styles.headerIcon}>
             <Leaf size={28} color="#fff" />
           </View>
           <View style={styles.headerText}>
             <Text style={styles.headerTitle}>KrishiMitra</Text>
-            <Text style={styles.headerSubtitle}>Your AI Agricultural Guide</Text>
+            <Text style={styles.headerSubtitle}>
+              Your AI Agricultural Guide
+            </Text>
           </View>
         </View>
       </LinearGradient>
@@ -229,9 +230,7 @@ export default function KrishiMitraScreen() {
               <Send size={20} color="#fff" />
             </TouchableOpacity>
           </View>
-          <Text style={styles.characterCount}>
-            {inputText.length}/500
-          </Text>
+          <Text style={styles.characterCount}>{inputText.length}/500</Text>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>

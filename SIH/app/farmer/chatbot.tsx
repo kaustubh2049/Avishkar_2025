@@ -1,49 +1,91 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, KeyboardAvoidingView, Platform } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  FlatList,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { FarmerHeader, AiFab } from "@/components/FarmerHeader";
+import { FarmerHeader } from "@/components/FarmerHeader";
 import { Send, Bot, User } from "lucide-react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function ChatbotScreen() {
+  const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState([
-    { id: "1", text: "Namaste! I am your AI Farm Assistant. Ask me anything about crops, soil, or weather.", sender: "bot" },
+    {
+      id: "1",
+      text: "Namaste! I am your AI Farm Assistant. Ask me anything about crops, soil, or weather.",
+      sender: "bot",
+    },
   ]);
   const [inputText, setInputText] = useState("");
 
   const sendMessage = () => {
     if (!inputText.trim()) return;
 
-    const newMsg = { id: Date.now().toString(), text: inputText, sender: "user" };
+    const newMsg = {
+      id: Date.now().toString(),
+      text: inputText,
+      sender: "user",
+    };
     setMessages((prev) => [...prev, newMsg]);
     setInputText("");
 
     // Simulate bot response
     setTimeout(() => {
-      const botMsg = { id: (Date.now() + 1).toString(), text: "I can help you with that. Based on your soil report, Cotton is a good choice.", sender: "bot" };
+      const botMsg = {
+        id: (Date.now() + 1).toString(),
+        text: "I can help you with that. Based on your soil report, Cotton is a good choice.",
+        sender: "bot",
+      };
       setMessages((prev) => [...prev, botMsg]);
     }, 1000);
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      style={[styles.container, { paddingBottom: insets.bottom + 75 }]}
+    >
       <FarmerHeader />
-      <PageHeader title="AI Assistant" subtitle="Ask in Hindi, Marathi, or English" />
-      <AiFab />
+      <PageHeader
+        title="AI Assistant"
+        subtitle="Ask in Hindi, Marathi, or English"
+      />
 
       <FlatList
         data={messages}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.chatContent}
         renderItem={({ item }) => (
-          <View style={[styles.messageRow, item.sender === "user" ? styles.userRow : styles.botRow]}>
+          <View
+            style={[
+              styles.messageRow,
+              item.sender === "user" ? styles.userRow : styles.botRow,
+            ]}
+          >
             {item.sender === "bot" && (
               <View style={styles.botIcon}>
                 <Bot size={20} color="#fff" />
               </View>
             )}
-            <View style={[styles.bubble, item.sender === "user" ? styles.userBubble : styles.botBubble]}>
-              <Text style={[styles.messageText, item.sender === "user" ? styles.userText : styles.botText]}>
+            <View
+              style={[
+                styles.bubble,
+                item.sender === "user" ? styles.userBubble : styles.botBubble,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.messageText,
+                  item.sender === "user" ? styles.userText : styles.botText,
+                ]}
+              >
                 {item.text}
               </Text>
             </View>
@@ -56,13 +98,18 @@ export default function ChatbotScreen() {
         )}
       />
 
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={10}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={10}
+      >
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
-            placeholder="Ask a question..."
+            placeholder="Ask KrishiMitra anything..."
             value={inputText}
             onChangeText={setInputText}
+            multiline
+            maxLength={500}
           />
           <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
             <Send size={20} color="#fff" />
@@ -152,27 +199,39 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     flexDirection: "row",
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 16,
     backgroundColor: "#fff",
     borderTopWidth: 1,
-    borderTopColor: "#f1f5f9",
-    alignItems: "center",
-    gap: 12,
+    borderTopColor: "#e2e8f0",
+    alignItems: "flex-end",
+    gap: 10,
   },
   input: {
     flex: 1,
-    backgroundColor: "#f1f5f9",
+    backgroundColor: "#f8fafc",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderRadius: 24,
-    fontSize: 14,
+    borderRadius: 25,
+    fontSize: 15,
+    lineHeight: 20,
+    maxHeight: 100,
+    textAlignVertical: "center",
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
   },
   sendButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: "#0ea5e9",
     justifyContent: "center",
     alignItems: "center",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
 });
