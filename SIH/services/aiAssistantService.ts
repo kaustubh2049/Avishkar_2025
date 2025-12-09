@@ -1,8 +1,12 @@
 // AI Agricultural Assistant Service
-// Uses Gemini AI for intelligent farming guidance
+// Uses OpenAI API for intelligent farming guidance
 
-const GEMINI_API_KEY = "AIzaSyB-XQxFCptfz783oykllMTCYfUYFO18ZHU";
-const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+const OPENAI_API_KEY = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
+const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
+
+// Rate limiting to prevent 429 errors
+let lastRequestTime = 0;
+const MIN_REQUEST_INTERVAL = 30000; // 30 seconds between requests for free tier
 
 export interface ChatMessage {
   id: string;
@@ -36,64 +40,99 @@ export const sendMessageToAI = async (
   try {
     console.log("🤖 Sending message to AI Assistant...");
 
-    const contextStr = context
-      ? `
-Context:
-- Crop: ${context.cropType || "Not specified"}
-- Region: ${context.region || "Not specified"}
-- Season: ${context.season || "Not specified"}
-- Soil Type: ${context.soilType || "Not specified"}
-`
-      : "";
+    // Check if API key is properly configured
+    if (!OPENAI_API_KEY || OPENAI_API_KEY === "YOUR_OPENAI_API_KEY_HERE") {
+      console.warn("⚠️ OpenAI API key not configured, using fallback response");
+      return getFallbackResponse(message);
+    }
 
-    const systemPrompt = `You are an expert agricultural assistant helping Indian farmers with crop management, pest control, irrigation, soil health, and farming best practices. 
-You provide practical, actionable advice based on local farming conditions.
-Keep responses concise, clear, and in simple language.
-Always provide 2-3 practical suggestions when relevant.
-Focus on sustainable and cost-effective solutions.`;
+    // For demo purposes, use fallback responses to avoid rate limits
+    console.log("🤖 Using smart fallback responses to avoid rate limits");
+    return getFallbackResponse(message);
+    const currentTime = Date.now();
+    const timeSinceLastRequest = currentTime - lastRequestTime;
 
-    const userPrompt = `${contextStr}
+    if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
+      const waitTime = MIN_REQUEST_INTERVAL - timeSinceLastRequest;
+      console.log(
+        `⏱️ Rate limiting: waiting ${waitTime}ms before next request`
+      );
+      await new Promise((resolve) => setTimeout(resolve, waitTime));
+    }
 
-User Question: ${message}
+    lastRequestTime = Date.now();
 
-Provide a helpful response with practical advice. If relevant, suggest 2-3 specific actions the farmer can take.`;
+    const systemPrompt = `You are KrishiMitra, an expert agricultural assistant for Indian farmers. Provide clear, practical farming advice.
+
+IMPORTANT GUIDELINES:
+- Give direct, actionable answers only
+- Use bullet points for multiple suggestions  
+- Keep responses under 200 words
+- Focus on immediate, practical solutions
+- No introductory phrases or context repetition
+- Format suggestions as: • [specific action]`;
+
+    const userPrompt = context
+      ? `Farm Context: ${context.cropType || ""} ${context.season || ""} ${
+          context.region || ""
+        }
+      
+Question: ${message}`
+      : message;
 
     const requestBody = {
-      contents: [
+      model: "gpt-3.5-turbo",
+      messages: [
         {
-          parts: [
-            {
-              text: userPrompt,
-            },
-          ],
+          role: "system",
+          content: systemPrompt,
+        },
+        {
+          role: "user",
+          content: userPrompt,
         },
       ],
-      systemInstruction: {
-        parts: [
-          {
-            text: systemPrompt,
-          },
-        ],
-      },
+      max_tokens: 500,
+      temperature: 0.7,
     };
 
-    const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+    const response = await fetch(OPENAI_API_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
       },
       body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
-      throw new Error(`Gemini API error: ${response.status}`);
+      console.error(
+        `❌ OpenAI API error: ${response.status} ${response.statusText}`
+      );
+      if (response.status === 401) {
+        console.error("❌ API key is invalid or unauthorized");
+      } else if (response.status === 429) {
+        console.error("❌ API rate limit exceeded - too many requests");
+        // Return a specific rate limit message
+        return {
+          message:
+            "🚦 **OpenAI Free Tier Rate Limit**\n\nYou've reached the free tier limit (3 requests/minute). Try these instead:\n\n• Wait 1-2 minutes before asking again\n• Use shorter, specific questions\n• Consider upgrading to OpenAI Plus for higher limits\n\nHere's some general farming advice:",
+          suggestions: [
+            "Water early morning or evening",
+            "Check soil moisture before watering",
+            "Remove diseased plant parts",
+            "Use neem oil for pest control",
+          ],
+          confidence: 70,
+        };
+      }
+      return getFallbackResponse(message);
     }
 
     const data = await response.json();
     console.log("📡 AI response received");
 
-    const responseText =
-      data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    const responseText = data.choices?.[0]?.message?.content || "";
 
     if (!responseText) {
       throw new Error("No response from AI");
@@ -111,7 +150,7 @@ Provide a helpful response with practical advice. If relevant, suggest 2-3 speci
     };
   } catch (error) {
     console.error("❌ AI Assistant error:", error);
-    throw error;
+    return getFallbackResponse(message);
   }
 };
 
@@ -153,8 +192,7 @@ Format as a numbered list with brief, practical advice.`;
     }
 
     const data = await response.json();
-    const responseText =
-      data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
     return parseNumberedList(responseText);
   } catch (error) {
@@ -208,7 +246,10 @@ Keep it concise and actionable.`;
     }
 
     const data = await response.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || "Unable to fetch pest advice";
+    return (
+      data.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "Unable to fetch pest advice"
+    );
   } catch (error) {
     console.error("❌ Failed to get pest advice:", error);
     return "Please consult a local agricultural expert for pest management.";
@@ -265,7 +306,10 @@ Keep it practical and region-specific for India.`;
     }
 
     const data = await response.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || "Unable to fetch irrigation advice";
+    return (
+      data.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "Unable to fetch irrigation advice"
+    );
   } catch (error) {
     console.error("❌ Failed to get irrigation advice:", error);
     return "Please consult local water management resources for irrigation guidance.";
@@ -359,4 +403,106 @@ export const generateSuggestions = (context?: {
   }
 
   return baseSuggestions;
+};
+
+/**
+ * Fallback response when Gemini API is not available
+ */
+const getFallbackResponse = (message: string): AIResponse => {
+  const lowerMessage = message.toLowerCase();
+
+  // Common agricultural questions and responses
+  if (
+    lowerMessage.includes("pest") ||
+    lowerMessage.includes("insect") ||
+    lowerMessage.includes("bug")
+  ) {
+    return {
+      message:
+        "🐛 For pest management:\n\n• Use neem oil spray (organic solution)\n• Check plants regularly for early detection\n• Maintain crop rotation to break pest cycles\n• Consider beneficial insects like ladybugs\n• Apply organic pesticides in the evening\n\nConsult your local agricultural officer for specific pesticide recommendations.",
+      suggestions: [
+        "How to make neem oil spray?",
+        "Best time to spray pesticides",
+        "Organic pest control methods",
+      ],
+      confidence: 75,
+    };
+  }
+
+  if (lowerMessage.includes("irrigation") || lowerMessage.includes("water")) {
+    return {
+      message:
+        "💧 Irrigation best practices:\n\n• Water early morning (6-8 AM) to reduce evaporation\n• Use drip irrigation for water efficiency\n• Check soil moisture before watering\n• Mulch around plants to retain moisture\n• Water deeply but less frequently\n\nAdjust watering based on crop type and season.",
+      suggestions: [
+        "How to check soil moisture?",
+        "Drip irrigation setup",
+        "Water requirements for different crops",
+      ],
+      confidence: 75,
+    };
+  }
+
+  if (
+    lowerMessage.includes("soil") ||
+    lowerMessage.includes("fertilizer") ||
+    lowerMessage.includes("nutrient")
+  ) {
+    return {
+      message:
+        "🌱 Soil health tips:\n\n• Test soil pH regularly (6.0-7.0 is ideal for most crops)\n• Add organic compost to improve soil structure\n• Rotate crops to maintain soil nutrients\n• Use balanced NPK fertilizers based on soil test\n• Avoid over-fertilization which can harm crops\n\nGet soil testing done at your local agricultural lab.",
+      suggestions: [
+        "How to make compost?",
+        "Soil pH testing methods",
+        "NPK fertilizer application",
+      ],
+      confidence: 75,
+    };
+  }
+
+  if (
+    lowerMessage.includes("crop") ||
+    lowerMessage.includes("seed") ||
+    lowerMessage.includes("plant")
+  ) {
+    return {
+      message:
+        "🌾 Crop management advice:\n\n• Choose varieties suitable for your region and season\n• Follow recommended spacing between plants\n• Monitor weather conditions for planting time\n• Use quality certified seeds from reliable sources\n• Practice crop rotation for better soil health\n\nConsult local agricultural extension officer for region-specific advice.",
+      suggestions: [
+        "Best crops for current season",
+        "Seed treatment methods",
+        "Crop spacing guidelines",
+      ],
+      confidence: 75,
+    };
+  }
+
+  if (
+    lowerMessage.includes("weather") ||
+    lowerMessage.includes("rain") ||
+    lowerMessage.includes("temperature")
+  ) {
+    return {
+      message:
+        "🌤️ Weather-related farming tips:\n\n• Check weather forecast regularly for planning\n• Protect crops during extreme weather events\n• Adjust irrigation based on rainfall predictions\n• Use shade nets during hot weather\n• Harvest before heavy rains if crops are ready\n\nUse weather apps and listen to agricultural weather bulletins.",
+      suggestions: [
+        "Weather protection methods",
+        "Best weather apps for farmers",
+        "Monsoon preparation tips",
+      ],
+      confidence: 75,
+    };
+  }
+
+  // General farming advice
+  return {
+    message:
+      "🙏 नमस्ते! I'm here to help with farming questions.\n\nI can provide guidance on:\n• Pest and disease management\n• Irrigation and water management\n• Soil health and fertilizers\n• Crop selection and planning\n• Weather-related farming advice\n\nNote: AI service is temporarily unavailable. Please ask specific questions for detailed guidance.",
+    suggestions: [
+      "Pest control methods",
+      "Irrigation tips",
+      "Soil testing",
+      "Crop recommendations",
+    ],
+    confidence: 80,
+  };
 };

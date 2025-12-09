@@ -1,9 +1,8 @@
 // Hybrid Plant Disease Detection Service
-// Combines Local ML Model + Gemini AI for maximum accuracy
+// Combines Local ML Model + OpenAI for maximum accuracy
 
-const GEMINI_API_KEY = "AIzaSyB-XQxFCptfz783oykllMTCYfUYFO18ZHU";
-const GEMINI_API_URL =
-  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+const OPENAI_API_KEY = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
+const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
 const LOCAL_MODEL_API = "http://192.168.0.103:9000"; // Your Flask backend
 
 export interface DiseaseAnalysisResult {
@@ -38,13 +37,13 @@ export const analyzeImageHybrid = async (
   try {
     console.log("� Analyzing plant image with Gemini AI...");
 
-    // Use Gemini AI directly (more reliable than local model)
-    const geminiResult = await analyzeImageWithGemini(base64Image, imageType);
+    // Use OpenAI directly (more reliable than local model)
+    const openaiResult = await analyzeImageWithOpenAI(base64Image, imageType);
 
     console.log(
-      `✅ Analysis complete: ${geminiResult.disease} (${geminiResult.confidence}%)`
+      `✅ Analysis complete: ${openaiResult.disease} (${openaiResult.confidence}%)`
     );
-    return geminiResult;
+    return openaiResult;
   } catch (error) {
     console.error("❌ Analysis error:", error);
     return { ...fallbackColorAnalysis(), source: "fallback" };
@@ -222,17 +221,17 @@ const convertLocalToResult = (
 };
 
 /**
- * Analyzes a plant image using Gemini AI
+ * Analyzes a plant image using OpenAI
  * @param base64Image - Base64 encoded image string
  * @param imageType - Image MIME type (e.g., "image/jpeg")
  * @returns Disease analysis result with confidence and recommendations
  */
-export const analyzeImageWithGemini = async (
+export const analyzeImageWithOpenAI = async (
   base64Image: string,
   imageType: string = "image/jpeg"
 ): Promise<DiseaseAnalysisResult> => {
   try {
-    console.log("🔬 Analyzing plant image with Gemini AI...");
+    console.log("🔬 Analyzing plant image with OpenAI...");
 
     const prompt = `You are an expert plant pathologist. Analyze this plant image and provide a detailed disease diagnosis.
 
@@ -240,7 +239,7 @@ IMPORTANT: Respond ONLY with valid JSON in this exact format, no other text:
 {
   "disease": "specific disease name (e.g., 'Tomato Early Blight', 'Powdery Mildew', 'Healthy')",
   "confidence": 85,
-  "severity": "Moderate",
+  "severity": "Moderate", 
   "treatment": [
     "First treatment step",
     "Second treatment step",
@@ -267,51 +266,78 @@ Analyze the image for:
 Be specific and accurate. If the plant appears healthy, set disease to "Healthy" and confidence to 95.`;
 
     const requestBody = {
-      contents: [
+      model: "gpt-4-vision-preview",
+      messages: [
         {
-          parts: [
+          role: "user",
+          content: [
             {
+              type: "text",
               text: prompt,
             },
             {
-              inlineData: {
-                mimeType: imageType,
-                data: base64Image,
+              type: "image_url",
+              image_url: {
+                url: `data:${imageType};base64,${base64Image}`,
               },
             },
           ],
         },
       ],
+      max_tokens: 500,
     };
 
-    const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+    const response = await fetch(OPENAI_API_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
       },
       body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
-      throw new Error(`Gemini API error: ${response.status}`);
+      if (response.status === 429) {
+        console.error("❌ OpenAI API rate limit exceeded");
+        // Return rate limit specific error for disease detection
+        return {
+          disease: "Service Temporarily Unavailable",
+          confidence: 0,
+          severity: "Mild" as const,
+          treatment: [
+            "Rate limit reached - please try again in 1-2 minutes",
+            "Take multiple clear photos of affected plant parts",
+            "Check plant in good lighting conditions",
+            "Consult local agricultural expert if urgent",
+          ],
+          prevention: [
+            "Regular plant monitoring helps early detection",
+            "Use disease-resistant crop varieties",
+            "Maintain proper plant spacing",
+            "Follow crop rotation practices",
+          ],
+          source: "fallback" as const,
+        };
+      }
+      throw new Error(`OpenAI API error: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log("📡 Gemini API response received");
+    console.log("📡 OpenAI API response received");
 
     // Extract text from response
-    const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    const responseText = data.choices?.[0]?.message?.content || "";
 
     if (!responseText) {
-      throw new Error("No response from Gemini AI");
+      throw new Error("No response from OpenAI");
     }
 
-    console.log("🔍 Parsing Gemini response...");
+    console.log("🔍 Parsing OpenAI response...");
 
     // Parse JSON from response
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      throw new Error("Could not parse JSON from Gemini response");
+      throw new Error("Could not parse JSON from OpenAI response");
     }
 
     const result = JSON.parse(jsonMatch[0]) as DiseaseAnalysisResult;
@@ -327,7 +353,7 @@ Be specific and accurate. If the plant appears healthy, set disease to "Healthy"
       prevention: Array.isArray(result.prevention)
         ? result.prevention.filter((p) => typeof p === "string").slice(0, 4)
         : ["Maintain proper plant hygiene"],
-      source: "gemini",
+      source: "openai",
     };
 
     console.log(
@@ -336,7 +362,7 @@ Be specific and accurate. If the plant appears healthy, set disease to "Healthy"
 
     return validatedResult;
   } catch (error) {
-    console.error("❌ Gemini AI analysis failed:", error);
+    console.error("❌ OpenAI analysis failed:", error);
     throw error;
   }
 };
@@ -405,7 +431,7 @@ export const fallbackColorAnalysis = (): DiseaseAnalysisResult => {
 export default {
   analyzeImageHybrid,
   analyzeImageWithLocalModel,
-  analyzeImageWithGemini,
+  analyzeImageWithOpenAI,
   imageUriToBase64,
   fallbackColorAnalysis,
 };

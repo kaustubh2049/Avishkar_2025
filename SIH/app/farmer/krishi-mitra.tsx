@@ -31,7 +31,46 @@ import {
   ChatMessage,
   AIResponse,
 } from "@/services/aiAssistantService";
-import { FarmerHeader } from "@/components/FarmerHeader";
+
+// Helper function to clean and format AI responses
+const cleanAIResponse = (text: string): string => {
+  // Remove system prompts, context, and formatting artifacts
+  let cleaned = text
+    .replace(/Context:\s*\n[\s\S]*?(?=\n\n|User Question:|$)/gi, "") // Remove context blocks
+    .replace(/User Question:[\s\S]*?(?=\n\n|$)/gi, "") // Remove user question echoes
+    .replace(/You are an? [^.]*?\./gi, "") // Remove "You are an expert..." prompts
+    .replace(/As an? [^,]*?, /gi, "") // Remove "As an expert," beginnings
+    .replace(/\*\*([^*]+)\*\*/g, "• $1") // Convert **bold** to bullet points
+    .replace(/^\s*[\-•]\s*/gm, "• ") // Normalize bullet points
+    .replace(/\n{3,}/g, "\n\n") // Remove excessive line breaks
+    .replace(/^[\s\n]+|[\s\n]+$/g, "") // Trim whitespace
+    .replace(
+      /\b(Here are some?|Here's what|Some suggestions?|You can try)([^:]*:)/gi,
+      ""
+    ) // Remove generic intros
+    .replace(/^\s*•\s*$/gm, "") // Remove empty bullet points
+    .trim();
+
+  return cleaned;
+};
+
+// Extract actionable suggestions from response
+const extractSuggestionsFromText = (text: string): string[] => {
+  const suggestions: string[] = [];
+
+  // Look for bullet points or numbered lists
+  const bulletMatches = text.match(/•\s*([^\n•]+)/g);
+  if (bulletMatches) {
+    bulletMatches.slice(0, 3).forEach((match) => {
+      const suggestion = match.replace(/^•\s*/, "").trim();
+      if (suggestion.length > 10 && suggestion.length < 80) {
+        suggestions.push(suggestion);
+      }
+    });
+  }
+
+  return suggestions;
+};
 
 const { width } = Dimensions.get("window");
 
@@ -41,7 +80,7 @@ export default function KrishiMitraScreen() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: "welcome",
-      text: "नमस्ते! 🙏 I'm KrishiMitra, your AI Agricultural Assistant. Ask me anything about farming, crops, pests, irrigation, or soil health!",
+      text: "🌾 नमस्ते! Welcome to KrishiMitra\n\nI'm your AI farming assistant. I can help you with:\n\n• Crop care & disease management\n• Pest control strategies\n• Irrigation & water management\n• Soil health & fertilization\n• Weather-based farming tips\n\nHow can I assist you today?",
       sender: "assistant",
       timestamp: Date.now(),
     },
@@ -83,17 +122,23 @@ export default function KrishiMitraScreen() {
     try {
       const response = await sendMessageToAI(inputText);
 
+      // Clean the AI response and extract suggestions
+      const cleanedMessage = cleanAIResponse(response.message);
+      const extractedSuggestions = extractSuggestionsFromText(cleanedMessage);
+
       const assistantMessage: ChatMessage = {
         id: `msg-${Date.now()}-ai`,
-        text: response.message,
+        text: cleanedMessage,
         sender: "assistant",
         timestamp: Date.now(),
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
 
-      // Update suggestions based on response
-      if (response.suggestions && response.suggestions.length > 0) {
+      // Update suggestions - prefer extracted suggestions from response
+      if (extractedSuggestions.length > 0) {
+        setSuggestions(extractedSuggestions);
+      } else if (response.suggestions && response.suggestions.length > 0) {
         setSuggestions(response.suggestions);
       }
     } catch (error) {
@@ -116,9 +161,7 @@ export default function KrishiMitraScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { paddingBottom: insets.bottom }]}>
-      <FarmerHeader />
-
-      {/* Header */}
+      {/* KrishiMitra Header */}
       <LinearGradient colors={["#1A73E8", "#1565D8"]} style={styles.header}>
         <View style={styles.headerContent}>
           <View style={styles.headerIcon}>
@@ -136,7 +179,7 @@ export default function KrishiMitraScreen() {
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
-        keyboardVerticalOffset={100}
+        keyboardVerticalOffset={40}
       >
         {/* Messages */}
         <ScrollView
@@ -186,7 +229,7 @@ export default function KrishiMitraScreen() {
         </ScrollView>
 
         {/* Suggestions */}
-        {suggestions.length > 0 && !loading && (
+        {suggestions.length > 0 && !loading && messages.length === 1 && (
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -199,7 +242,7 @@ export default function KrishiMitraScreen() {
                 style={styles.suggestionChip}
                 onPress={() => handleSuggestionPress(suggestion)}
               >
-                <Lightbulb size={14} color="#1A73E8" />
+                <Lightbulb size={8} color="#1A73E8" />
                 <Text style={styles.suggestionText}>{suggestion}</Text>
               </TouchableOpacity>
             ))}
@@ -241,11 +284,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f8fafc",
+    paddingBottom: 80, // Add space above bottom navbar
   },
   header: {
     paddingHorizontal: 20,
-    paddingVertical: 16,
-    marginBottom: 12,
+    paddingTop: 20,
+    paddingBottom: 16,
+    marginBottom: 8,
   },
   headerContent: {
     flexDirection: "row",
@@ -284,41 +329,57 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   messageWrapper: {
-    marginVertical: 8,
+    marginVertical: 6,
     flexDirection: "row",
+    paddingHorizontal: 4,
   },
   userMessageWrapper: {
     justifyContent: "flex-end",
+    marginLeft: 40,
   },
   assistantMessageWrapper: {
     justifyContent: "flex-start",
+    marginRight: 20,
   },
   messageBubble: {
-    maxWidth: "80%",
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 16,
+    maxWidth: "85%",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 18,
+    marginVertical: 2,
   },
   userBubble: {
     backgroundColor: "#1A73E8",
-    borderBottomRightRadius: 4,
+    borderBottomRightRadius: 6,
+    shadowColor: "#1A73E8",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   assistantBubble: {
-    backgroundColor: "#fff",
-    borderBottomLeftRadius: 4,
+    backgroundColor: "#ffffff",
+    borderBottomLeftRadius: 6,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: "#e8f4f8",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   messageText: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 22,
+    letterSpacing: 0.2,
   },
   userText: {
-    color: "#fff",
+    color: "#ffffff",
     fontWeight: "500",
   },
   assistantText: {
-    color: "#1e293b",
+    color: "#2d3748",
+    fontWeight: "400",
   },
   loadingContainer: {
     alignItems: "center",
@@ -334,28 +395,30 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "#e2e8f0",
     backgroundColor: "#fff",
-    paddingVertical: 8,
+    paddingVertical: 2,
+    marginBottom: 5,
+    maxHeight: 30,
   },
   suggestionsScroll: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
+    paddingHorizontal: 4,
+    paddingVertical: 0,
   },
   suggestionChip: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f0f4f8",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginHorizontal: 4,
+    backgroundColor: "#f7fafc",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    marginHorizontal: 1,
     borderWidth: 1,
-    borderColor: "#d0dce6",
+    borderColor: "#e2e8f0",
   },
   suggestionText: {
-    fontSize: 12,
+    fontSize: 9,
     color: "#1A73E8",
     fontWeight: "600",
-    marginLeft: 6,
+    marginLeft: 2,
   },
   inputContainer: {
     backgroundColor: "#fff",
@@ -363,7 +426,8 @@ const styles = StyleSheet.create({
     borderTopColor: "#e2e8f0",
     paddingHorizontal: 12,
     paddingVertical: 8,
-    paddingBottom: 12,
+    paddingBottom: 20,
+    marginBottom: 10,
   },
   inputWrapper: {
     flexDirection: "row",
